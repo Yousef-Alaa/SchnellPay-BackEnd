@@ -1,0 +1,8 @@
+// Note make a copy with name '.env'
+DB_USER=your_user
+DB_PASSWORD=your_pass
+DB_SERVER=localhost
+DB_NAME=schnell_pay
+DB_PORT=1433
+
+PORT=3000
