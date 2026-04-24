@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server"
+    "dev": "nodemon api/index.js",
+    "start": "node api/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -17,6 +18,7 @@
     "express-fileupload": "^1.5.2",
     "jsonwebtoken": "^9.0.3",
     "mssql": "^12.3.1",
-    "nodemailer": "^8.0.5"
+    "nodemailer": "^8.0.5",
+    "nodemon": "^3.1.14"
   }
 }
