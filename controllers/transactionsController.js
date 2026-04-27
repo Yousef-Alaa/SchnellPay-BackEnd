@@ -1,8 +1,11 @@
 const crypto = require("crypto");
 const { sql, poolPromise } = require("../config/db");
 
-exports.sendMoney = async (req, res) => {
-    
+const AppError = require("../utils/appError")
+const { findByUsername } = require("../models/userModel")
+const asyncWrapper = require("../middleware/asyncWrapper");
+
+exports.sendMoney = asyncWrapper(async (req, res, next) => {
     const {
         sender_username,
         receiver_username,
@@ -10,61 +13,64 @@ exports.sendMoney = async (req, res) => {
         description,
     } = req.body;
 
+    if (sender_username === receiver_username) 
+        return next(AppError.create("Cannot transfer to yourself", 400, false));
+    
 
-    if (sender_username === receiver_username) return res.status(400).json({ error: "Cannot transfer to yourself" });
+    const pool = await poolPromise;
+    const transaction = new sql.Transaction(pool);
 
     try {
-        const pool = await poolPromise;
-        const transaction = new sql.Transaction(pool);
 
         await transaction.begin();
 
-        const getUsers = await new sql.Request(transaction)
-        .input("sender", sql.VarChar, sender_username)
-        .input("receiver", sql.VarChar, receiver_username)
-        .query(`
-            SELECT user_id, user_name 
-            FROM users 
-            WHERE user_name = @sender OR user_name = @receiver
-        `);
+        const sender = await findByUsername(sender_username);
+        
+        if (!sender) {
+            await transaction.rollback();
+            return next(AppError.create("Sender not found", 400, false));
+        }
 
-        if (getUsers.recordset.length < 2) throw new Error("Sender or receiver not found");
-
-        let sender_id, receiver_id;
-
-        getUsers.recordset.forEach(user => {
-            if (user.user_name === sender_username) sender_id = user.user_id;
-            if (user.user_name === receiver_username) receiver_id = user.user_id;
-        });
+        const receiver = await findByUsername(receiver_username);
+        
+        if (!receiver) {
+            await transaction.rollback();
+            return next(AppError.create("Receiver not found", 400, false));
+        }
 
         const deductResult = await new sql.Request(transaction)
         .input("amount", sql.Decimal(15, 2), amount)
-        .input("sender_id", sql.Int, sender_id)
+        .input("sender_id", sql.Int, sender.user_id)
         .query(`
             UPDATE wallet
             SET balance = balance - @amount
             WHERE user_id = @sender_id AND balance >= @amount
         `);
 
-        if (deductResult.rowsAffected[0] === 0) throw new Error("Insufficient balance");
-        
+        if (deductResult.rowsAffected[0] === 0) {
+            await transaction.rollback();
+            return next(AppError.create("Insufficient balance", 400, false));
+        }
 
         const addResult = await new sql.Request(transaction)
         .input("amount", sql.Decimal(15, 2), amount)
-        .input("receiver_id", sql.Int, receiver_id)
+        .input("receiver_id", sql.Int, receiver.user_id)
         .query(`
             UPDATE wallet
             SET balance = balance + @amount
             WHERE user_id = @receiver_id
         `);
 
-        if (addResult.rowsAffected[0] === 0) throw new Error("Receiver wallet not found");
+        if (addResult.rowsAffected[0] === 0) {
+            await transaction.rollback();
+            return next(AppError.create("Receiver wallet not found", 400, false));
+        }
 
         const refNumber = crypto.randomBytes(8).toString("hex");
 
         await new sql.Request(transaction)
-        .input("sender_id", sql.Int, sender_id)
-        .input("receiver_id", sql.Int, receiver_id)
+        .input("sender_id", sql.Int, sender.user_id)
+        .input("receiver_id", sql.Int, receiver.user_id)
         .input("amount", sql.Decimal(15, 2), amount)
         .input("desc", sql.VarChar, description)
         .input("refNum", sql.VarChar, refNumber)
@@ -96,14 +102,7 @@ exports.sendMoney = async (req, res) => {
         });
 
     } catch (err) {
-        // rollback on error
-        try {
-            await transaction.rollback();
-        } catch (e) {}
-
-        res.status(500).json({
-            success: false,
-            error: err.message,
-        });
+        await transaction.rollback();
+        next(err);
     }
-    };
+});
