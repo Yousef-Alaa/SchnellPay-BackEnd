@@ -88,7 +88,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
             @sender_id,
             @receiver_id,
             @amount,
-            'Success',
+            'completed',
             @desc,
             @refNum
             )
