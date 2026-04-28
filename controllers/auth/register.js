@@ -4,6 +4,9 @@ const bcrypt = require("bcryptjs");
 const AppError = require("../../utils/appError");
 const UserModel = require("../../models/userModel");
 
+// @desc Create new account for a user
+// @route POST /api/v1/auth/register
+// @access Public
 const register = asyncWrapper(async (req, res, next) => {
   const { fname, lname, email, password, phone, country, user_name } = req.body;
   if (

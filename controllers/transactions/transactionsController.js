@@ -8,6 +8,10 @@ const { findByUsername } = require("../../models/userModel")
 const { deductBalance, addBalance } = require("../../models/walletModel");
 const { createTransaction } = require("../../models/transactionModel");
 
+
+// @desc Send Money To another user
+// @route POST /api/v1/transactions/send
+// @access Private
 exports.sendMoney = asyncWrapper(async (req, res, next) => {
     
     const {
