@@ -2,14 +2,14 @@ const express = require("express");
 
 const app = express();
 
-const userRoutes = require("../routes/users");
-const transactionsRoutes = require("../routes/transactions");
+const userRoutes = require("../routes/users/users");
+const transactionsRoutes = require("../routes/transactions/transactions");
 const authRouter = require("../routes/auth/auth");
 const logger = require("../middleware/logger");
 
 app.use(express.json());
 
-app.use(logger)
+app.use(logger);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);

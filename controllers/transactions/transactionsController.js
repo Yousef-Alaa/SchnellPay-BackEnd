@@ -1,12 +1,12 @@
 const crypto = require("crypto");
-const { sql, poolPromise } = require("../config/db");
+const { sql, poolPromise } = require("../../config/db");
 
-const AppError = require("../utils/appError")
-const asyncWrapper = require("../middleware/asyncWrapper");
+const AppError = require("../../utils/appError")
+const asyncWrapper = require("../../middleware/asyncWrapper");
 
-const { findByUsername } = require("../models/userModel")
-const { deductBalance, addBalance } = require("../models/walletModel");
-const { createTransaction } = require("../models/transactionModel");
+const { findByUsername } = require("../../models/userModel")
+const { deductBalance, addBalance } = require("../../models/walletModel");
+const { createTransaction } = require("../../models/transactionModel");
 
 exports.sendMoney = asyncWrapper(async (req, res, next) => {
     
