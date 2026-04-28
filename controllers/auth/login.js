@@ -5,6 +5,9 @@ const generateJWT = require("../../utils/generatJwt");
 const AppError = require("../../utils/appError");
 const UserModel = require("../../models/userModel");
 
+// @desc User Login
+// @route POST /api/v1/auth/login
+// @access Public
 const login = asyncWrapper(async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {

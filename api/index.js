@@ -2,10 +2,10 @@ const express = require("express");
 
 const app = express();
 
-const billsRoutes = require("../routes/bills/bills");
-const userRoutes = require("../routes/users/users");
-const transactionsRoutes = require("../routes/transactions/transactions");
-const authRouter = require("../routes/auth/auth");
+const billsRoutes = require("../routes/bills/billsRoute");
+const userRoutes = require("../routes/users/usersRoute");
+const transactionsRoutes = require("../routes/transactions/transactionsRoute");
+const authRouter = require("../routes/auth/authRoute");
 const logger = require("../middleware/logger");
 
 app.use(express.json());
