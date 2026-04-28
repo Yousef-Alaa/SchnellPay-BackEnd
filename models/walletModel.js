@@ -1,4 +1,6 @@
 const sql = require("mssql");
+const { poolPromise } = require("../config/db");
+
 
 const deductBalance = async (transaction, userId, amount) => {
     const result = await new sql.Request(transaction)
@@ -26,4 +28,19 @@ const addBalance = async (transaction, userId, amount) => {
     return result.rowsAffected[0];
 };
 
-module.exports = { deductBalance, addBalance };
+const getWalletByUserId = async (userId) => {
+    const pool = await poolPromise;
+
+    const result = await pool
+        .request()
+        .input("user_id", sql.Int, userId)
+        .query(`
+            SELECT balance, currency, wallet_status
+            FROM WALLET
+            WHERE user_id = @user_id
+        `);
+
+    return result.recordset[0] || null;
+};
+
+module.exports = { deductBalance, addBalance, getWalletByUserId };

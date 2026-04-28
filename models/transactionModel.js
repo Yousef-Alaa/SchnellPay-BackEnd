@@ -51,4 +51,30 @@ const createBillTransaction = async (transaction, userId, amount, reference) => 
     return result.recordset[0].transaction_id;
 };
 
-module.exports = { createBillTransaction, createTransaction };
+/**
+ * Log an ATM deposit or withdrawal.
+ * type: 'deposit' | 'withdraw'
+ * For deposits  → sender_id = NULL, receiver_id = userId  (money coming in)
+ * For withdraws → sender_id = userId, receiver_id = NULL  (money going out)
+ */
+const createAtmTransaction = async (transaction, userId, amount, type, reference) => {
+    
+    const isDeposit = type === "deposit";
+
+    await new sql.Request(transaction)
+        .input("user_id",     sql.Int,          userId)
+        .input("amount",      sql.Decimal(15,2), amount)
+        .input("type",        sql.VarChar,       type)
+        .input("desc",        sql.VarChar,       isDeposit ? "ATM Deposit" : "ATM Withdrawal")
+        .input("ref",         sql.VarChar,       reference)
+        .input("sender_id",   sql.Int,           isDeposit ? null   : userId)
+        .input("receiver_id", sql.Int,           isDeposit ? userId : null)
+        .query(`
+            INSERT INTO TRANSACTIONS
+                (transaction_type, sender_id, receiver_id, amount, status, description, reference_number)
+            VALUES
+                (@type, @sender_id, @receiver_id, @amount, 'completed', @desc, @ref)
+        `);
+};
+
+module.exports = { createBillTransaction, createTransaction, createAtmTransaction };
