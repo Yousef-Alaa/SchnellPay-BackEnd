@@ -2,6 +2,7 @@ const express = require("express");
 
 const app = express();
 
+const billsRoutes = require("../routes/bills/bills");
 const userRoutes = require("../routes/users/users");
 const transactionsRoutes = require("../routes/transactions/transactions");
 const authRouter = require("../routes/auth/auth");

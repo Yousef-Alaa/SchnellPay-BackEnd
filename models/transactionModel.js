@@ -36,9 +36,6 @@ const createTransaction = async (
         `);
 };
 
-// models/transaction.model.js
-const sql = require("mssql");
-
 const createBillTransaction = async (transaction, userId, amount, reference) => {
     const result = await new sql.Request(transaction)
         .input("user_id", sql.Int, userId)
