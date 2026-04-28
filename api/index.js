@@ -2,6 +2,7 @@ const express = require("express");
 
 const app = express();
 
+const billsRoutes = require("../routes/bills/bills");
 const userRoutes = require("../routes/users/users");
 const transactionsRoutes = require("../routes/transactions/transactions");
 const authRouter = require("../routes/auth/auth");
@@ -14,6 +15,7 @@ app.use(logger);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);
 
+app.use("/api/v1/bills", billsRoutes);
 app.use("/api/v1/transactions", transactionsRoutes);
 
 //global middleware for wrong routing
