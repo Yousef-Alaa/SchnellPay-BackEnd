@@ -2,6 +2,7 @@ const express = require("express");
 
 const app = express();
 
+const atmRoutes = require("../routes/atm/atmRoutes");
 const billsRoutes = require("../routes/bills/billsRoute");
 const userRoutes = require("../routes/users/usersRoute");
 const transactionsRoutes = require("../routes/transactions/transactionsRoute");
@@ -15,6 +16,7 @@ app.use(logger);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);
 
+app.use("/api/v1/atm", atmRoutes);
 app.use("/api/v1/bills", billsRoutes);
 app.use("/api/v1/transactions", transactionsRoutes);
 
