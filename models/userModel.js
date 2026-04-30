@@ -31,23 +31,34 @@ const findByUsername = async (username) => {
 
 // For admin listing with pagination and search
 
-const findAll = async ({ limit, offset, search }) => {
+const findAll = async ({ limit, skip, search, sort, order }) => {
   const pool = await poolPromise;
   const searchParam = search ? `%${search}%` : "%";
+  const allowedSortFields = [
+    "creation_date",
+    "f_name",
+    "email",
+    "user_name",
+    "role",
+  ];
+
+  const sortField = allowedSortFields.includes(sort) ? sort : "creation_date";
+  const orderDirection = order === "ASC" ? "ASC" : "DESC";
+
   const result = await pool
     .request()
     .input("search", sql.NVarChar, searchParam)
     .input("limit", sql.Int, limit)
-    .input("offset", sql.Int, offset)
-    .query(
-      `SELECT user_id, f_name, l_name, email, user_name, phone,
-              role, account_status, creation_date, country
-       FROM [USERS]
-       WHERE f_name LIKE @search OR l_name LIKE @search
-          OR email LIKE @search OR user_name LIKE @search
-       ORDER BY creation_date DESC
-       OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`,
-    );
+    .input("skip", sql.Int, skip).query(`
+      SELECT user_id, f_name, l_name, email, user_name, phone,
+             role, account_status, creation_date, country
+      FROM [USERS]
+      WHERE f_name LIKE @search OR l_name LIKE @search
+         OR email LIKE @search OR user_name LIKE @search
+      ORDER BY ${sortField} ${orderDirection}
+      OFFSET @skip ROWS FETCH NEXT @limit ROWS ONLY
+    `);
+
   return result.recordset;
 };
 
@@ -97,6 +108,50 @@ const create = async ({
   return result.recordset[0].user_id;
 };
 
+// ── Update ────────────────────────────────────────────────────────────────────
+
+const update = async (id, fields) => {
+  const pool = await poolPromise;
+  const allowed = [
+    "f_name",
+    "l_name",
+    "phone",
+    "country",
+    "account_status",
+    "role",
+  ];
+  const setClauses = [];
+  const request = pool.request().input("id", sql.Int, id);
+
+  for (const key of allowed) {
+    if (fields[key] !== undefined) {
+      setClauses.push(`${key} = @${key}`);
+      request.input(key, sql.NVarChar, fields[key]);
+    }
+  }
+
+  if (setClauses.length === 0) return null;
+
+  const result = await request.query(
+    `UPDATE [USERS] SET ${setClauses.join(", ")}
+     OUTPUT INSERTED.user_id, INSERTED.f_name, INSERTED.l_name,
+            INSERTED.email, INSERTED.user_name, INSERTED.account_status
+     WHERE user_id = @id`,
+  );
+  return result.recordset[0] || null;
+};
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+
+const deleteUser = async (id) => {
+  const pool = await poolPromise;
+  const result = await pool
+    .request()
+    .input("id", sql.Int, id)
+    .query("DELETE FROM [USERS] OUTPUT DELETED.user_id WHERE user_id = @id");
+  return result.recordset[0] || null;
+};
+
 module.exports = {
   findById,
   findByEmail,
@@ -104,4 +159,6 @@ module.exports = {
   findAll,
   count,
   create,
+  update,
+  deleteUser,
 };
