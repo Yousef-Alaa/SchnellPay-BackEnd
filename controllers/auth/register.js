@@ -46,7 +46,7 @@ const register = asyncWrapper(async (req, res, next) => {
 
   res.status(201).json({
     success: true,
-    data: newUser,
+    id: newUser,
   });
 });
 
