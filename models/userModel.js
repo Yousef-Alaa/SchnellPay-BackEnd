@@ -141,6 +141,34 @@ const update = async (id, fields) => {
   return result.recordset[0] || null;
 };
 
+const updateOTP = async (email, otp, expires) => {
+  const pool = await poolPromise;
+
+  await pool
+    .request()
+    .input("email", sql.VarChar, email)
+    .input("otp", sql.VarChar, otp)
+    .input("expires", sql.BigInt, expires).query(`
+      UPDATE USERS
+      SET email_otp = @otp,
+          email_otp_expires = @expires
+      WHERE email = @email
+    `);
+};
+
+const activateUser = async (email) => {
+  const pool = await poolPromise;
+  const result = await pool.request().input("email", sql.VarChar, email).query(`
+      UPDATE [USERS]   
+      SET is_verified = 1, 
+          email_otp = NULL, 
+          email_otp_expires = NULL 
+      OUTPUT INSERTED.user_id 
+      WHERE email = @email
+    `);
+  return result.recordset[0] || null;
+};
+
 // ── Delete ────────────────────────────────────────────────────────────────────
 
 const deleteUser = async (id) => {
@@ -161,4 +189,6 @@ module.exports = {
   create,
   update,
   deleteUser,
+  updateOTP,
+  activateUser,
 };

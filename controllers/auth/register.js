@@ -3,6 +3,9 @@ const { sql, poolPromise } = require("../../config/db");
 const bcrypt = require("bcryptjs");
 const AppError = require("../../utils/appError");
 const UserModel = require("../../models/userModel");
+const crypto = require("crypto");
+const sendEmail = require("../../utils/sendEmail");
+const updateOTP = require("../../models/userModel");
 
 // @desc Create new account for a user
 // @route POST /api/v1/auth/register
@@ -32,6 +35,7 @@ const register = asyncWrapper(async (req, res, next) => {
     );
     return next(error);
   }
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const newUser = await UserModel.create({
@@ -43,7 +47,14 @@ const register = asyncWrapper(async (req, res, next) => {
     password: hashedPassword,
     country: country,
   });
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+  const hashedOTP = crypto.createHash("sha256").update(otp).digest("hex");
+
+  const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  await UserModel.updateOTP(email, hashedOTP, expires);
+  await sendEmail(email, "Verify your account", "OTP", [otp]);
   res.status(201).json({
     success: true,
     id: newUser,
