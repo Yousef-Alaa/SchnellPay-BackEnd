@@ -169,6 +169,24 @@ const activateUser = async (email) => {
   return result.recordset[0] || null;
 };
 
+const updatePassword = async (email, hashedPassword) => {
+  const pool = await poolPromise;
+  await pool
+    .request()
+    .input("password", sql.NVarChar, hashedPassword)
+    .input("email", sql.VarChar, email)
+    .query("UPDATE [USERS] SET password = @password WHERE email = @email");
+};
+
+const updatePasswordById = async (id, hashedPassword) => {
+  const pool = await poolPromise;
+  await pool
+    .request()
+    .input("password", sql.NVarChar, hashedPassword)
+    .input("id", sql.Int, id)
+    .query("UPDATE [USERS] SET password = @password WHERE user_id = @id");
+};
+
 // ── Delete ────────────────────────────────────────────────────────────────────
 
 const deleteUser = async (id) => {
@@ -191,4 +209,6 @@ module.exports = {
   deleteUser,
   updateOTP,
   activateUser,
+  updatePassword,
+  updatePasswordById,
 };
