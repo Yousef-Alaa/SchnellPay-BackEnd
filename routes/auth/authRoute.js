@@ -8,6 +8,8 @@ const changePassword = require("../../controllers/auth/changePassword");
 const resetPassword = require("../../controllers/auth/resetPassword");
 const forgetPassword = require("../../controllers/auth/forgetPassword");
 const verifyToken = require("../../middleware/verifyToken");
+const verifyResetOTP = require("../../controllers/auth/verifyResetOTP");
+
 const router = express.Router();
 
 router.post("/login", resendLimit.loginLimiter, login);
@@ -17,5 +19,7 @@ router.post("/forget-password", forgetPassword);
 router.post("/reset-password", resetPassword);
 router.post("/change-password", verifyToken, changePassword);
 router.post("/resend-otp", resendLimit.otpLimiter, resendOtp);
+router.post("/verify-reset-otp", verifyResetOTP);
+
 
 module.exports = router;

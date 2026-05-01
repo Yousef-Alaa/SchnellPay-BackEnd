@@ -6,10 +6,10 @@ const sendEmail = require("../../utils/sendEmail");
 const bcrypt = require("bcryptjs");
 
 const resetPassword = asyncWrapper(async (req, res, next) => {
-  const { email, otp, newPassword } = req.body;
-  if (!email || !otp || !newPassword) {
+  const { email, newPassword } = req.body;
+  if (!email || !newPassword) {
     const error = AppError.create(
-      "Email, OTP and new password are required",
+      "Email and new password are required",
       400,
       false,
     );
@@ -20,15 +20,13 @@ const resetPassword = asyncWrapper(async (req, res, next) => {
     const error = AppError.create("User not found", 404, false);
     return next(error);
   }
-  const hashedInputOTP = crypto.createHash("sha256").update(otp).digest("hex");
-  if (
-    user.email_otp !== hashedInputOTP ||
-    user.email_otp_expires < Date.now()
-  ) {
-    const error = AppError.create("Invalid or expired OTP", 400, false);
+  if (!user.reset_otp_verified) {
+    const error = AppError.create("OTP not verified", 400, false);
     return next(error);
   }
+
   const hashedPassword = await bcrypt.hash(newPassword, 10);
+  await UserModel.clearResetOtp(email);
 
   await UserModel.updatePassword(email, hashedPassword);
   res.status(200).json({

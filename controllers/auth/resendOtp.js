@@ -5,10 +5,10 @@ const crypto = require("crypto");
 const sendEmail = require("../../utils/sendEmail");
 
 const resendOTP = asyncWrapper(async (req, res, next) => {
-  const { email } = req.body;
+  const { email, type } = req.body;
 
-  if (!email) {
-    return next(AppError.create("Email is required", 400, false));
+  if (!email || !type) {
+    return next(AppError.create("Email and type are required", 400, false));
   }
 
   const user = await UserModel.findByEmail(email);
@@ -22,9 +22,16 @@ const resendOTP = asyncWrapper(async (req, res, next) => {
 
   const expires = Date.now() + 10 * 60 * 1000;
 
-  await UserModel.updateOTP(email, hashedOTP, expires);
+  if (type === "verify") {
+    await UserModel.updateOTP(email, hashedOTP, expires);
+  }
+
+  if (type === "reset") {
+    await UserModel.saveResetOtp(email, hashedOTP, expires);
+  }
 
   await sendEmail(email, "Your new OTP for SchnellPay", "OTP", [otp]);
+
   res.status(200).json({
     success: true,
     message: "OTP resent successfully",

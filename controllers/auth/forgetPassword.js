@@ -19,7 +19,8 @@ const forgetPassword = asyncWrapper(async (req, res, next) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const hashedOTP = crypto.createHash("sha256").update(otp).digest("hex");
   const expires = Date.now() + 10 * 60 * 1000;
-  await UserModel.updateOTP(email, hashedOTP, expires);
+  await UserModel.saveResetOtp(email, hashedOTP, expires);
+
   await sendEmail(email, "Your OTP Code To Reset Password", "OTP", [otp]);
 
   res.status(200).json({

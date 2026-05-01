@@ -187,6 +187,32 @@ const updatePasswordById = async (id, hashedPassword) => {
     .query("UPDATE [USERS] SET password = @password WHERE user_id = @id");
 };
 
+const saveResetOtp = async (email, otp, expires) => {
+  const pool = await poolPromise;
+
+  await pool
+    .request()
+    .input("email", sql.VarChar, email)
+    .input("otp", sql.VarChar, otp)
+    .input("expires", sql.BigInt, expires).query(`
+      UPDATE USERS
+      SET reset_otp = @otp,
+          reset_otp_expires = @expires,
+          reset_otp_verified = 0
+      WHERE email = @email
+    `);
+};
+
+const markOtpVerified = async (email) => {
+  const pool = await poolPromise;
+
+  await pool.request().input("email", sql.VarChar, email).query(`
+      UPDATE USERS
+      SET reset_otp_verified = 1
+      WHERE email = @email
+    `);
+};
+
 // ── Delete ────────────────────────────────────────────────────────────────────
 
 const deleteUser = async (id) => {
@@ -196,6 +222,18 @@ const deleteUser = async (id) => {
     .input("id", sql.Int, id)
     .query("DELETE FROM [USERS] OUTPUT DELETED.user_id WHERE user_id = @id");
   return result.recordset[0] || null;
+};
+
+const clearResetOtp = async (email) => {
+  const pool = await poolPromise;
+
+  await pool.request().input("email", sql.VarChar, email).query(`
+      UPDATE USERS
+      SET reset_otp = NULL,
+          reset_otp_expires = NULL,
+          reset_otp_verified = 0
+      WHERE email = @email
+    `);
 };
 
 module.exports = {
@@ -211,4 +249,7 @@ module.exports = {
   activateUser,
   updatePassword,
   updatePasswordById,
+  saveResetOtp,
+  markOtpVerified,
+  clearResetOtp,
 };
