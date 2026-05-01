@@ -5,8 +5,9 @@ const getAllUsersController = require("../../controllers/users/getAllUsersContro
 const getSingleUserController = require("../../controllers/users/getSingleUserController");
 const updateUserController = require("../../controllers/users/updateUserController");
 const deletUserController = require("../../controllers/users/deletUserController");
+const verifyToken = require("../../middleware/verifyToken");
 
-router.get("/", getAllUsersController);
+router.get("/", verifyToken, getAllUsersController);
 router.get("/:id", getSingleUserController);
 router.patch("/:id", updateUserController);
 router.delete("/:id", deletUserController);

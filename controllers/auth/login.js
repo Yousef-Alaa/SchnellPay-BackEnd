@@ -8,6 +8,7 @@ const UserModel = require("../../models/userModel");
 // @desc User Login
 // @route POST /api/v1/auth/login
 // @access Public
+
 const login = asyncWrapper(async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -25,12 +26,22 @@ const login = asyncWrapper(async (req, res, next) => {
     const error = AppError.create("Invalid email or password", 401, false);
     return next(error);
   }
-  const token = await generateJWT({
-    id: user._id,
-    name: user.name,
+
+  if (!user.is_verified) {
+    const error = AppError.create(
+      "Please verify your email before logging in",
+      403,
+      false,
+    );
+    return next(error);
+  }
+  const token = generateJWT({
+    id: user.user_id,
     email: user.email,
+    name: `${user.f_name} ${user.l_name}`,
     role: user.role,
   });
+
   return res.status(200).json({
     success: true,
     message: "User logged in successfully",
