@@ -8,7 +8,7 @@ const changePassword = require("../../controllers/auth/changePassword");
 const resetPassword = require("../../controllers/auth/resetPassword");
 const forgetPassword = require("../../controllers/auth/forgetPassword");
 const verifyToken = require("../../middleware/verifyToken");
-const verifyResetOTP = require("../../controllers/auth/verifyResetOTP");
+const verifyResetOTP = require("../../controllers/auth/verifyResetOtp");
 
 const router = express.Router();
 
