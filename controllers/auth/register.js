@@ -26,6 +26,12 @@ const register = asyncWrapper(async (req, res, next) => {
   }
 
   const existingUser = await UserModel.findByEmail(email);
+  const existingUsername = await UserModel.findByUsername(user_name);
+
+  if (existingUsername) {
+    const error = AppError.create("Username already taken", 400, false);
+    return next(error);
+  }
 
   if (existingUser) {
     const error = AppError.create(
