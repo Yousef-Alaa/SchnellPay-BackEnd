@@ -1,11 +1,6 @@
 const { poolPromise, sql } = require("../config/db");
 
 // ── MFA Status ────────────────────────────────────────────────────────────────
-
-/**
- * Get MFA-related columns by user_id.
- * Used internally after we already resolved the user from username/email.
- */
 const getMfaStatus = async (userId) => {
     const pool = await poolPromise;
 
@@ -23,11 +18,7 @@ const getMfaStatus = async (userId) => {
     return result.recordset[0] || null;
 };
 
-/**
- * Get MFA-related columns by username.
- * Used in public-facing endpoints (validate, send-otp) where we only
- * receive a username, never a user_id.
- */
+
 const getMfaStatusByUsername = async (username) => {
     const pool = await poolPromise;
 
@@ -46,10 +37,6 @@ const getMfaStatusByUsername = async (username) => {
 };
 
 // ── OTP (Email method) ────────────────────────────────────────────────────────
-
-/**
- * Save a hashed OTP code + expiry for a pending email MFA challenge.
- */
 const saveOtp = async (userId, hashedOtp, expiresAt) => {
     const pool = await poolPromise;
 
@@ -66,9 +53,7 @@ const saveOtp = async (userId, hashedOtp, expiresAt) => {
         `);
 };
 
-/**
- * Clear the OTP code + expiry after use or expiry.
- */
+
 const clearOtp = async (userId) => {
     const pool = await poolPromise;
 
@@ -84,10 +69,6 @@ const clearOtp = async (userId) => {
 };
 
 // ── TOTP (Auth App method) ────────────────────────────────────────────────────
-
-/**
- * Save a pending TOTP secret. mfa_enabled stays 0 until verify-setup confirms it.
- */
 const saveTotpSecret = async (userId, secret) => {
     const pool = await poolPromise;
 
@@ -102,11 +83,6 @@ const saveTotpSecret = async (userId, secret) => {
         `);
 };
 
-// ── Enable / Disable ──────────────────────────────────────────────────────────
-
-/**
- * Mark MFA as fully enabled after successful verification.
- */
 const enableMfa = async (userId, method) => {
     const pool = await poolPromise;
 
@@ -124,9 +100,6 @@ const enableMfa = async (userId, method) => {
         `);
 };
 
-/**
- * Fully disable MFA — clears all MFA-related fields.
- */
 const disableMfa = async (userId) => {
     const pool = await poolPromise;
 
@@ -145,10 +118,6 @@ const disableMfa = async (userId) => {
 };
 
 // ── Backup Codes ──────────────────────────────────────────────────────────────
-
-/**
- * Delete all existing backup codes for a user, then insert fresh hashed ones.
- */
 const saveBackupCodes = async (userId, hashedCodes) => {
     const pool = await poolPromise;
 
@@ -169,10 +138,6 @@ const saveBackupCodes = async (userId, hashedCodes) => {
     }
 };
 
-/**
- * Fetch all unused backup code rows for a user.
- * Returns [{ code_id, code_hash }]
- */
 const getUnusedBackupCodes = async (userId) => {
     const pool = await poolPromise;
 
@@ -188,9 +153,6 @@ const getUnusedBackupCodes = async (userId) => {
     return result.recordset;
 };
 
-/**
- * Mark a specific backup code as used so it cannot be reused.
- */
 const markBackupCodeUsed = async (codeId) => {
     const pool = await poolPromise;
 

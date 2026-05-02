@@ -25,12 +25,11 @@ const { sendOtpEmail, sendBackupCodesEmail } = require("../../utils/mfaMailer");
 
 const OTP_EXPIRY_MINUTES = 10;
 const BACKUP_CODE_COUNT  = 10;
-const BCRYPT_ROUNDS      = 10; // bcrypt cost factor — see README
+const BCRYPT_ROUNDS      = 10; // bcrypt cost factor
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const generateOtp = () =>
-    Math.floor(100000 + Math.random() * 900000).toString();
+const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const generateBackupCodes = async () => {
     const plainCodes  = Array.from({ length: BACKUP_CODE_COUNT }, () =>
@@ -42,7 +41,6 @@ const generateBackupCodes = async () => {
     return { plainCodes, hashedCodes };
 };
 
-/** Shared backup-code verifier — returns matched code_id or null */
 const verifyBackupCode = async (userId, code) => {
     const backupCodes = await getUnusedBackupCodes(userId);
     for (const { code_id, code_hash } of backupCodes) {
@@ -58,8 +56,9 @@ const verifyBackupCode = async (userId, code) => {
 // @route  POST /api/v1/2fa/setup
 // @access Private
 const setupMfa = asyncWrapper(async (req, res, next) => {
+    
     const { method } = req.body;
-    const userId = req.user.user_id; // set by verifyToken
+    const userId = req.user.id;
 
     if (!method || !["email", "app"].includes(method)) {
         return next(AppError.create("Method must be 'email' or 'app'.", 400, false));
@@ -80,10 +79,10 @@ const setupMfa = asyncWrapper(async (req, res, next) => {
         const otp       = generateOtp();
         const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
         const hashedOtp = await bcrypt.hash(otp, BCRYPT_ROUNDS);
-
+        
         await saveOtp(userId, hashedOtp, expiresAt);
         await sendOtpEmail(user.email, user.f_name, otp);
-
+        
         return res.status(200).json({
             status:  "success",
             message: `A 6-digit verification code has been sent to ${user.email}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`,
@@ -121,7 +120,7 @@ const setupMfa = asyncWrapper(async (req, res, next) => {
 // @access Private
 const verifySetup = asyncWrapper(async (req, res, next) => {
     const { code } = req.body;
-    const userId   = req.user.user_id;
+    const userId   = req.user.id;
 
     if (!code) return next(AppError.create("Verification code is required.", 400, false));
 
@@ -295,7 +294,7 @@ const validateMfa = asyncWrapper(async (req, res, next) => {
 // @access Private
 const disableMfaHandler = asyncWrapper(async (req, res, next) => {
     const { code } = req.body;
-    const userId   = req.user.user_id;
+    const userId   = req.user.id;
 
     if (!code) return next(AppError.create("MFA code is required to disable MFA.", 400, false));
 
