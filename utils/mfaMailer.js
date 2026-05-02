@@ -5,8 +5,8 @@ const transporter = nodemailer.createTransport({
     port:   Number(process.env.MAIL_PORT) || 587,
     secure: process.env.MAIL_SECURE === "true",
     auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
     },
 });
 
@@ -168,7 +168,7 @@ const backupCodesEmailHtml = (name, codes) => {
 
 const sendOtpEmail = async (toEmail, name, otp) => {
     await transporter.sendMail({
-        from:    `"YourApp Security" <${process.env.MAIL_USER}>`,
+        from:    `"YourApp Security" <${process.env.EMAIL_USER}>`,
         to:      toEmail,
         subject: "Your two-factor authentication code",
         html:    otpEmailHtml(name, otp),
@@ -177,7 +177,7 @@ const sendOtpEmail = async (toEmail, name, otp) => {
 
 const sendBackupCodesEmail = async (toEmail, name, plainCodes) => {
     await transporter.sendMail({
-        from:    `"YourApp Security" <${process.env.MAIL_USER}>`,
+        from:    `"YourApp Security" <${process.env.EMAIL_USER}>`,
         to:      toEmail,
         subject: "Your 2FA backup codes — save these now",
         html:    backupCodesEmailHtml(name, plainCodes),

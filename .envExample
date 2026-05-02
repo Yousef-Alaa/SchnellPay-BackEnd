@@ -1,0 +1,17 @@
+PORT=
+NODE_ENV = development # set to 'production' when deploy
+
+DB_PORT=
+DB_NAME=
+DB_SERVER=
+DB_USER=
+DB_PASSWORD=
+
+SECRET_KEY=your_jwt_secret
+
+MAIL_PORT =
+MAIL_SECURE = true or false
+MAIL_SERVICE = gmail
+MAIL_HOST = smtp.gmail.com
+EMAIL_USER = 
+EMAIL_PASS = 
