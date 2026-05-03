@@ -14,7 +14,7 @@ const verifyToken = (req, res, next) => {
   try {
     const decodedToken = jwt.verify(authHeader, process.env.SECRET_KEY);
     console.log("Decoded Token:", decodedToken); // Debugging log
-    req.user = decodedToken;
+    req.user = decodedToken; //for allowing access to user info in protected routes
     next();
   } catch (err) {
     const error = appError.create("Invalid token", 400, false);

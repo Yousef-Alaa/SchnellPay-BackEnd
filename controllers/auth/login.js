@@ -55,6 +55,7 @@ const login = asyncWrapper(async (req, res, next) => {
     email: user.email,
     name: `${user.f_name} ${user.l_name}`,
     role: user.role,
+    username: user.user_name,
   });
 
   return res.status(200).json({
