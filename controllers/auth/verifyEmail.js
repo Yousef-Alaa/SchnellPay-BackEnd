@@ -2,7 +2,7 @@ const asyncWrapper = require("../../middleware/asyncWrapper");
 const AppError = require("../../utils/appError");
 const UserModel = require("../../models/userModel");
 const crypto = require("crypto");
-const sendEmail = require("../../utils/sendEmail");
+  const sendEmail = require("../../utils/sendEmail");
 
 const verifyEmail = asyncWrapper(async (req, res, next) => {
   const { email, otp } = req.body;
@@ -39,6 +39,7 @@ const verifyEmail = asyncWrapper(async (req, res, next) => {
     message: "Email verified successfully",
     user: activatedUser,
   });
+
   await sendEmail(user.email, "Welcome to SchnellPay!", "WELCOME", [
     user.f_name,
   ]);

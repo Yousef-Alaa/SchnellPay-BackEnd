@@ -87,6 +87,7 @@ const create = async ({
   password,
   role,
   country,
+  transaction_PIN,
 }) => {
   const pool = await poolPromise;
   const result = await pool
@@ -100,10 +101,11 @@ const create = async ({
     .input("password", sql.NVarChar, password)
     .input("role", sql.NVarChar, role || "user")
     .input("country", sql.NVarChar, country || null)
+    .input("transaction_PIN", sql.NVarChar, transaction_PIN)
     .query(
-      `INSERT INTO [USERS] (f_name, l_name, email, user_name, phone, password, role, country)
+      `INSERT INTO [USERS] (f_name, l_name, email, user_name, phone, password, role, country, transaction_PIN)
        OUTPUT INSERTED.user_id
-       VALUES (@f_name, @l_name, @email, @user_name, @phone, @password, @role, @country)`,
+       VALUES (@f_name, @l_name, @email, @user_name, @phone, @password, @role, @country, @transaction_PIN)`,
     );
   return result.recordset[0].user_id;
 };

@@ -11,7 +11,16 @@ const updateOTP = require("../../models/userModel");
 // @route POST /api/v1/auth/register
 // @access Public
 const register = asyncWrapper(async (req, res, next) => {
-  const { fname, lname, email, password, phone, country, user_name } = req.body;
+  const {
+    fname,
+    lname,
+    email,
+    password,
+    phone,
+    country,
+    user_name,
+    transaction_pin,
+  } = req.body;
   if (
     !fname ||
     !lname ||
@@ -19,7 +28,8 @@ const register = asyncWrapper(async (req, res, next) => {
     !password ||
     !phone ||
     !country ||
-    !user_name
+    !user_name ||
+    !transaction_pin
   ) {
     const error = AppError.create("All fields are required", 400, false);
     return next(error);
@@ -42,6 +52,17 @@ const register = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
 
+  if (!/^\d{6}$/.test(transaction_pin)) {
+    const error = AppError.create(
+      "Transaction PIN must be exactly 6 digits",
+      400,
+      false,
+    );
+    return next(error);
+  }
+
+  const hashedPin = await bcrypt.hash(transaction_pin, 10);
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const newUser = await UserModel.create({
@@ -52,7 +73,9 @@ const register = asyncWrapper(async (req, res, next) => {
     phone: phone,
     password: hashedPassword,
     country: country,
+    transaction_PIN: hashedPin,
   });
+
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
   const hashedOTP = crypto.createHash("sha256").update(otp).digest("hex");
@@ -61,6 +84,7 @@ const register = asyncWrapper(async (req, res, next) => {
 
   await UserModel.updateOTP(email, hashedOTP, expires);
   await sendEmail(email, "Verify your account", "OTP", [otp]);
+
   res.status(201).json({
     success: true,
     id: newUser,
