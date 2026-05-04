@@ -3,7 +3,7 @@ const UserModel = require("../../models/userModel");
 const AppError = require("../../utils/appError");
 
 const updateUserController = asyncWrapper(async (req, res, next) => {
-  const { id } = req.params;
+  const id = req.user.id || req.params.id; // Use req.user.id for /updateMe and req.params.id for admin update
   const fields = req.body;
 
   if (!fields || Object.keys(fields).length === 0) {
