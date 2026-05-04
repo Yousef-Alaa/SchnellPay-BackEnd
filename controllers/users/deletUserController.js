@@ -3,7 +3,7 @@ const userModel = require("../../models/userModel");
 const appError = require("../../utils/appError");
 
 const deletUserController = asyncWrapper(async (req, res, next) => {
-  const { id } = req.params;
+  const id = req.user.id || req.params.id; // Use req.user.id for /deleteMe and req.params.id for admin delete
   const deleted = await userModel.deleteUser(id);
   if (!deleted) {
     const error = appError.create("User not found", 404);

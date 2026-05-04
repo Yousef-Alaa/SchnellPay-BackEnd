@@ -8,7 +8,13 @@ const deletUserController = require("../../controllers/users/deletUserController
 const allowTo = require("../../middleware/allowTo");
 const verifyToken = require("../../middleware/verifyToken");
 
-router.get("/", verifyToken, allowTo("admin"), getAllUsersController);
+router.get("/getMe", verifyToken, getSingleUserController);
+router.patch("/updateMe", verifyToken, updateUserController);
+router.delete("/deleteMe", verifyToken, deletUserController);
+
+router.use(verifyToken, allowTo("admin")); // For admin routes below
+
+router.get("/", getAllUsersController);
 router.get("/:id", getSingleUserController);
 router.patch("/:id", updateUserController);
 router.delete("/:id", deletUserController);
