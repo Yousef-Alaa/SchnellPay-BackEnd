@@ -1,6 +1,6 @@
 const express = require("express");
 const router  = express.Router();
-const { verifyAtm, checkBalance, deposit, withdraw } = require("../../controllers/atm/atmController");
+const { generatePin, verifyAtm, deposit, withdraw } = require("../../controllers/atm/atmController");
 
 /**
  * ATM Routes — /api/v1/atm
@@ -9,6 +9,7 @@ const { verifyAtm, checkBalance, deposit, withdraw } = require("../../controller
  * re-verified on every request, mirroring real ATM behaviour.
  */
 
+router.post("/generate-pin", generatePin);
 router.post("/verify",   verifyAtm);
 router.post("/deposit",  deposit);
 router.post("/withdraw", withdraw);

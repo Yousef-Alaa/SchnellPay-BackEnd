@@ -67,8 +67,8 @@ const otpEmailHtml = (name, otp) => `
       <hr class="divider"/>
       <p class="footer">
         If you did not request this, please ignore this email or
-        <a href="mailto:support@yourapp.com">contact support</a> if you have concerns.<br/><br/>
-        — The YourApp Security Team
+        <a href="mailto:support@schnellpay.com">contact support</a> if you have concerns.<br/><br/>
+        — The Schnell-Pay Security Team
       </p>
     </div>
   </div>
@@ -155,8 +155,8 @@ const backupCodesEmailHtml = (name, codes) => {
       <hr class="divider"/>
       <p class="footer">
         If you did not enable 2FA, please
-        <a href="mailto:support@yourapp.com">contact support</a> immediately.<br/><br/>
-        — The YourApp Security Team
+        <a href="mailto:support@schnellpay.com">contact support</a> immediately.<br/><br/>
+        — The Schnell-Pay Security Team
       </p>
     </div>
   </div>
@@ -168,7 +168,7 @@ const backupCodesEmailHtml = (name, codes) => {
 
 const sendOtpEmail = async (toEmail, name, otp) => {
     await transporter.sendMail({
-        from:    `"YourApp Security" <${process.env.EMAIL_USER}>`,
+        from:    `"Schnell-Pay Security" <${process.env.EMAIL_USER}>`,
         to:      toEmail,
         subject: "Your two-factor authentication code",
         html:    otpEmailHtml(name, otp),
@@ -177,7 +177,7 @@ const sendOtpEmail = async (toEmail, name, otp) => {
 
 const sendBackupCodesEmail = async (toEmail, name, plainCodes) => {
     await transporter.sendMail({
-        from:    `"YourApp Security" <${process.env.EMAIL_USER}>`,
+        from:    `"Schnell-Pay Security" <${process.env.EMAIL_USER}>`,
         to:      toEmail,
         subject: "Your 2FA backup codes — save these now",
         html:    backupCodesEmailHtml(name, plainCodes),
