@@ -2,8 +2,8 @@ const bcrypt    = require("bcryptjs");
 const speakeasy = require("speakeasy");
 const qrcode    = require("qrcode");
 const crypto    = require("crypto");
-const jwt       = require("jsonwebtoken");
 
+const issueTokens  = require("../../utils/issueTokens");
 const AppError     = require("../../utils/appError");
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const generateJWT  = require("../../utils/generatJwt");
@@ -54,7 +54,7 @@ const verifyBackupCode = async (userId, code) => {
 // ─── Controllers ─────────────────────────────────────────────────────────────
 
 // @desc   Initiate MFA setup — choose method ('email' | 'app')
-// @route  POST /api/v1/2fa/setup
+// @route  POST /api/v1/auth/2fa/setup
 // @access Private
 const setupMfa = asyncWrapper(async (req, res, next) => {
     
@@ -117,7 +117,7 @@ const setupMfa = asyncWrapper(async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // @desc   Verify the first MFA code to confirm setup + receive backup codes
-// @route  POST /api/v1/2fa/verify-setup
+// @route  POST /api/v1/auth/2fa/verify-setup
 // @access Private
 const verifySetup = asyncWrapper(async (req, res, next) => {
     const { code } = req.body;
@@ -191,7 +191,7 @@ const verifySetup = asyncWrapper(async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // @desc   Send a login OTP to email (called after password check, before JWT)
-// @route  POST /api/v1/2fa/send-otp
+// @route  POST /api/v1/auth/2fa/send-otp
 // @access Public
 const sendLoginOtp = asyncWrapper(async (req, res, next) => {
     const { username } = req.body;
@@ -220,32 +220,25 @@ const sendLoginOtp = asyncWrapper(async (req, res, next) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-// @desc   Validate a 2FA code or backup code at login — issues JWT on success
-// @route  POST /api/v1/2fa/validate
-// @access Public
+
+// @desc   Validate a 2FA code or backup code at login — issues full JWT on success
+// @route  POST /api/v1/auth/2fa/validate
+// @access Public — requires mfa_token issued by /login
 const validateMfa = asyncWrapper(async (req, res, next) => {
-    
-    const { username, code, mfa_token } = req.body;
+    const { mfa_token, code } = req.body;
 
-    if (!username || !code) 
-        return next(AppError.create("Username and code are required.", 400, false));
-    
-    if (!mfa_token)
-        return next(AppError.create("No MFA Token Provided Please login First.", 400, false));
+    if (!code) return next(AppError.create("Code is required.", 400, false));
 
-    const mfa = await getMfaStatusByUsername(username);
+    // Verify the mfa_token — proves /login was called first and password passed
+    const decoded = resolveMfaToken(mfa_token, next);
+    if (!decoded) return;
+
+    const mfa = await getMfaStatus(decoded.user_id);
     if (!mfa) return next(AppError.create("User not found.", 404, false));
 
-    if (!mfa.mfa_enabled) 
+    if (!mfa.mfa_enabled) {
         return next(AppError.create("MFA is not enabled for this account.", 400, false));
-    
-    const decodedToken = jwt.verify(mfa_token, process.env.MFA_TOKEN_SECRET);
-    
-    if (decodedToken.username != username) 
-        return next(AppError.create("Account not Match Request.", 400, false));
-    
-    if (decodedToken.method != mfa.mfa_method) 
-        return next(AppError.create("Method not Match Request.", 400, false));
+    }
 
     let verified = false;
 
@@ -253,9 +246,9 @@ const validateMfa = asyncWrapper(async (req, res, next) => {
     if (mfa.mfa_method === "email" && mfa.otp_code && mfa.otp_expires_at) {
         if (new Date(mfa.otp_expires_at) >= new Date()) {
             verified = await bcrypt.compare(code, mfa.otp_code);
-            if (verified) await clearOtp(mfa.user_id);
+            if (verified) await clearOtp(decoded.user_id);
         } else {
-            await clearOtp(mfa.user_id); // expired — clean up silently
+            await clearOtp(decoded.user_id);
         }
     }
 
@@ -271,36 +264,32 @@ const validateMfa = asyncWrapper(async (req, res, next) => {
 
     // ── Backup code fallback ──────────────────────────────────────────────────
     if (!verified) {
-        const codeId = await verifyBackupCode(mfa.user_id, code);
+        const codeId = await verifyBackupCode(decoded.user_id, code);
         if (codeId) {
             await markBackupCodeUsed(codeId);
             verified = true;
         }
     }
 
-    if (!verified) return next(AppError.create("Invalid or expired MFA code.", 401, false));
-    
+    if (!verified) {
+        return next(AppError.create("Invalid or expired MFA code.", 401, false));
+    }
 
-    // ── Issue JWT ─────────────────────────────────────────────────────────────
-    const user  = await findById(mfa.user_id);
-    const token = generateJWT({
-        id:    user.user_id,
-        email: user.email,
-        name:  `${user.f_name} ${user.l_name}`,
-        role:  user.role,
-    });
+    // ── Issue access token + refresh token ────────────────────────────────────
+    const user        = await findById(decoded.user_id);
+    const accessToken = await issueTokens(user, res); // sets httpOnly cookie + returns access token
 
     return res.status(200).json({
         success: true,
         message: "MFA verified. Logged in successfully.",
-        token,
+        token:   accessToken,
     });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 // @desc   Regenerate backup-codes and delete old ones (requires a valid MFA code to confirm)
-// @route  POST /api/v1/2fa/regenerate-backup-codes
+// @route  POST /api/v1/auth/2fa/regenerate-backup-codes
 // @access Private
 const regenerateBackupCodes = asyncWrapper(async (req, res, next) => {
     
@@ -365,7 +354,7 @@ const regenerateBackupCodes = asyncWrapper(async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // @desc   Disable MFA (requires a valid MFA code to confirm)
-// @route  POST /api/v1/2fa/disable
+// @route  POST /api/v1/auth/2fa/disable
 // @access Private
 const disableMfaHandler = asyncWrapper(async (req, res, next) => {
     const { code } = req.body;
