@@ -14,12 +14,24 @@ const router = express.Router();
 
 router.post("/login", resendLimit.loginLimiter, login);
 router.post("/register", resendLimit.registerLimiter, register);
-router.post("/verify-email", verifyEmail);
-router.post("/forget-password", forgetPassword);
-router.post("/reset-password", resetPassword);
-router.post("/change-password", verifyToken, changePassword);
+router.post("/verify-email", resendLimit.verifyEmailLimiter, verifyEmail);
+router.post(
+  "/forget-password",
+  resendLimit.forgetPasswordLimiter,
+  forgetPassword,
+);
+router.post("/reset-password", resendLimit.resetPasswordLimiter, resetPassword);
+router.post(
+  "/change-password",
+  resendLimit.changePasswordLimiter,
+  verifyToken,
+  changePassword,
+);
 router.post("/resend-otp", resendLimit.otpLimiter, resendOtp);
-router.post("/verify-reset-otp", verifyResetOTP);
-
+router.post(
+  "/verify-reset-otp",
+  resendLimit.verifyResetOtpLimiter,
+  verifyResetOTP,
+);
 
 module.exports = router;
