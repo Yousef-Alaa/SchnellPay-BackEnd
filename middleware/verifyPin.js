@@ -1,4 +1,4 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const appError = require("../utils/appError");
 const transactionModel = require("../models/transactionModel");
 
