@@ -30,6 +30,27 @@ const getPaymentMethodsByUserId = async (userId) => {
     return result.recordset;
 };
 
+
+// For Deposite 
+// Verifies if a specific payment method exists and belongs to the user
+
+const verifyPaymentMethodOwnership = async (userId, methodId) => {
+    const pool = await poolPromise;
+    
+    const result = await pool.request()
+        .input('userId', sql.Int, userId)
+        .input('methodId', sql.Int, methodId)
+        .query(`
+            SELECT method_id 
+            FROM PAYMENT_METHODS 
+            WHERE method_id = @methodId AND user_id = @userId;
+        `);
+
+    // Returns true if exactly 1 record is found, otherwise false
+    return result.recordset.length > 0;
+};
+
+
 // Delete
 // recursively deletes corresponding card or mobile wallet due to DB definiton
 
@@ -91,5 +112,6 @@ const setDefaultPaymentMethod = async (userId, methodId) => {
 module.exports = {
     getPaymentMethodsByUserId,
     deletePaymentMethod,
-    setDefaultPaymentMethod
+    setDefaultPaymentMethod,
+    verifyPaymentMethodOwnership
 };

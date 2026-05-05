@@ -10,6 +10,7 @@ const authRouter = require("../routes/auth/authRoute");
 const logger = require("../middleware/logger");
 const twoFaRoutes = require("../routes/auth/twoFaRoutes");
 const paymentMethodsRouter = require("../routes/paymentMethods/paymentMethodsRoute");
+const depositMethodRouter = require("../routes/paymentMethods/depositMethodRoute");
 
 app.use(express.json());
 
@@ -24,6 +25,7 @@ app.use("/api/v1/bills", billsRoutes);
 app.use("/api/v1/transactions", transactionsRoutes);
 
 app.use("/api/v1/payment-methods",paymentMethodsRouter);
+app.use("/api/v1/wallet/deposit",depositMethodRouter);
 
 //global middleware for wrong routing
 app.use((req, res) => {
