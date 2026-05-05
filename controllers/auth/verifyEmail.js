@@ -1,6 +1,7 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const AppError = require("../../utils/appError");
 const UserModel = require("../../models/userModel");
+const { createWallet } = require("../../models/walletModel");
 const crypto = require("crypto");
   const sendEmail = require("../../utils/sendEmail");
 
@@ -33,6 +34,10 @@ const verifyEmail = asyncWrapper(async (req, res, next) => {
   }
 
   const activatedUser = await UserModel.activateUser(email);
+
+  if (activatedUser) {
+      await createWallet(activatedUser.user_id);
+  }
 
   res.status(200).json({
     success: true,

@@ -2,6 +2,21 @@ const sql = require("mssql");
 const { poolPromise } = require("../config/db");
 
 
+const createWallet = async (userId, defaultCurrency = 'EGP') => {
+    const pool = await poolPromise;
+
+    const result = await pool
+        .request()
+        .input("user_id", sql.Int, userId)
+        .input("currency", sql.VarChar, defaultCurrency)
+        .query(`
+            INSERT INTO WALLET (user_id, balance, currency, wallet_status)
+            VALUES (@user_id, 0.00, @currency, 'active')
+        `);
+
+    return result.rowsAffected[0] > 0;
+};
+
 const deductBalance = async (transaction, userId, amount) => {
     const result = await new sql.Request(transaction)
     .input("amount", sql.Decimal(15, 2), amount)
@@ -43,4 +58,4 @@ const getWalletByUserId = async (userId) => {
     return result.recordset[0] || null;
 };
 
-module.exports = { deductBalance, addBalance, getWalletByUserId };
+module.exports = { deductBalance, addBalance, getWalletByUserId, createWallet };
