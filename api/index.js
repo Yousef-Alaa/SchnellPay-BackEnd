@@ -8,14 +8,12 @@ const userRoutes = require("../routes/users/usersRoute");
 const transactionsRoutes = require("../routes/transactions/transactionsRoute");
 const authRouter = require("../routes/auth/authRoute");
 const logger = require("../middleware/logger");
-const twoFaRoutes = require("../routes/auth/twoFaRoutes");
 const paymentMethodsRouter = require("../routes/paymentMethods/paymentMethodsRoute");
 
 app.use(express.json());
 
 app.use(logger);
 
-app.use("/api/v1/2fa", twoFaRoutes);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);
 
