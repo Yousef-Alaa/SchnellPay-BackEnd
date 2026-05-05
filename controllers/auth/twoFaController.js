@@ -2,6 +2,7 @@ const bcrypt    = require("bcryptjs");
 const speakeasy = require("speakeasy");
 const qrcode    = require("qrcode");
 const crypto    = require("crypto");
+const jwt       = require("jsonwebtoken");
 
 const AppError     = require("../../utils/appError");
 const asyncWrapper = require("../../middleware/asyncWrapper");
@@ -223,18 +224,28 @@ const sendLoginOtp = asyncWrapper(async (req, res, next) => {
 // @route  POST /api/v1/2fa/validate
 // @access Public
 const validateMfa = asyncWrapper(async (req, res, next) => {
-    const { username, code } = req.body;
+    
+    const { username, code, mfa_token } = req.body;
 
-    if (!username || !code) {
+    if (!username || !code) 
         return next(AppError.create("Username and code are required.", 400, false));
-    }
+    
+    if (!mfa_token)
+        return next(AppError.create("No MFA Token Provided Please login First.", 400, false));
 
     const mfa = await getMfaStatusByUsername(username);
     if (!mfa) return next(AppError.create("User not found.", 404, false));
 
-    if (!mfa.mfa_enabled) {
+    if (!mfa.mfa_enabled) 
         return next(AppError.create("MFA is not enabled for this account.", 400, false));
-    }
+    
+    const decodedToken = jwt.verify(mfa_token, process.env.MFA_TOKEN_SECRET);
+    
+    if (decodedToken.username != username) 
+        return next(AppError.create("Account not Match Request.", 400, false));
+    
+    if (decodedToken.method != mfa.mfa_method) 
+        return next(AppError.create("Method not Match Request.", 400, false));
 
     let verified = false;
 
@@ -267,9 +278,8 @@ const validateMfa = asyncWrapper(async (req, res, next) => {
         }
     }
 
-    if (!verified) {
-        return next(AppError.create("Invalid or expired MFA code.", 401, false));
-    }
+    if (!verified) return next(AppError.create("Invalid or expired MFA code.", 401, false));
+    
 
     // ── Issue JWT ─────────────────────────────────────────────────────────────
     const user  = await findById(mfa.user_id);
