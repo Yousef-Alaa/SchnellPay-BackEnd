@@ -94,7 +94,7 @@ const setupMfa = asyncWrapper(async (req, res, next) => {
     if (method === "app") {
         const user   = await findById(userId);
         const secret = speakeasy.generateSecret({
-            name:   `YourApp (${user.email})`,
+            name:   `Schnell-Pay (${user.email})`,
             length: 20,
         });
 
@@ -103,7 +103,7 @@ const setupMfa = asyncWrapper(async (req, res, next) => {
 
         return res.status(200).json({
             status:  "success",
-            message: "Scan the QR code with your authenticator app, then call /verify-setup with the 6-digit code.",
+            message: "Scan the QR code with your authenticator app.",
             data: {
                 method:  "app",
                 secret:  secret.base32,   // fallback for manual entry
@@ -289,6 +289,71 @@ const validateMfa = asyncWrapper(async (req, res, next) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// @desc   Regenerate backup-codes and delete old ones (requires a valid MFA code to confirm)
+// @route  POST /api/v1/2fa/regenerate-backup-codes
+// @access Private
+const regenerateBackupCodes = asyncWrapper(async (req, res, next) => {
+    
+    const { code } = req.body;
+    const userId   = req.user.id;
+
+    if (!code) return next(AppError.create("MFA code is required to disable MFA.", 400, false));
+
+    const mfa = await getMfaStatus(userId);
+    if (!mfa) return next(AppError.create("User not found.", 404, false));
+
+    if (!mfa.mfa_enabled) {
+        return next(AppError.create("MFA is not enabled on this account.", 400, false));
+    }
+
+    let verified = false;
+
+    if (mfa.mfa_method === "email" && mfa.otp_code && mfa.otp_expires_at) {
+        if (new Date(mfa.otp_expires_at) >= new Date()) {
+            verified = await bcrypt.compare(code, mfa.otp_code);
+        }
+    }
+
+    if (!verified && mfa.mfa_method === "app" && mfa.totp_secret) {
+        verified = speakeasy.totp.verify({
+            secret:   mfa.totp_secret,
+            encoding: "base32",
+            token:    code,
+            window:   1,
+        });
+    }
+
+    if (!verified) {
+        const codeId = await verifyBackupCode(userId, code);
+        if (codeId) {
+            await markBackupCodeUsed(codeId);
+            verified = true;
+        }
+    }
+
+    if (!verified) {
+        return next(AppError.create("Invalid MFA code. Disable aborted.", 401, false));
+    }
+
+    const { plainCodes, hashedCodes } = await generateBackupCodes();
+    await saveBackupCodes(userId, hashedCodes);
+
+    const user = await findById(userId);
+    await sendBackupCodesEmail(user.email, user.f_name, plainCodes);
+
+    return res.status(200).json({
+        status:  "success",
+        message: "Backup codes have been sent to your email — store them safely. They will not be shown again.",
+        data: {
+            backup_codes: plainCodes,
+        },
+    });
+    
+
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 // @desc   Disable MFA (requires a valid MFA code to confirm)
 // @route  POST /api/v1/2fa/disable
 // @access Private
@@ -342,4 +407,4 @@ const disableMfaHandler = asyncWrapper(async (req, res, next) => {
     });
 });
 
-module.exports = { setupMfa, verifySetup, validateMfa, disableMfaHandler, sendLoginOtp };
+module.exports = { setupMfa, verifySetup, validateMfa, regenerateBackupCodes, disableMfaHandler, sendLoginOtp };
