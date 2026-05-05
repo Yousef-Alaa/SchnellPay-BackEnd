@@ -1,5 +1,6 @@
 const sql = require("mssql");
 const { poolPromise } = require("../config/db");
+const appError = require("../utils/appError");
 
 const createTransaction = async (
   transaction,
@@ -248,6 +249,27 @@ const countByUserId = async (userId, { type, status, from, to }) => {
   return result.recordset[0].total;
 };
 
+const getPinByUserId = async (userId) => {
+  try {
+    const pool = await poolPromise;
+
+    const result = await pool.request().input("userId", sql.Int, userId).query(`
+        SELECT transactionPin 
+        FROM Users 
+        WHERE id = @userId
+      `);
+
+    if (result.recordset.length === 0) {
+      return null;
+    }
+
+    return result.recordset[0].transactionPin;
+  } catch (err) {
+    throw new appError(`Database Error: ${err.message}`, 500);
+  }
+};
+
+module.exports = getPinByUserId;
 module.exports = {
   createBillTransaction,
   createTransaction,
@@ -256,4 +278,5 @@ module.exports = {
   countByUserId,
   getAllTransactions,
   countAll,
+  getPinByUserId,
 };
