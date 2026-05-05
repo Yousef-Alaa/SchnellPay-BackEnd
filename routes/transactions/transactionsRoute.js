@@ -7,10 +7,16 @@ const getUserTransactionController = require("../../controllers/transactions/get
 
 const verifytoken = require("../../middleware/verifyToken");
 const allowTo = require("../../middleware/allowTo");
+const verifyTransactionPin = require("../../middleware/verifyPin");
 
 router.get("/user", verifytoken, getUserTransactionController);
 
 router.get("/", verifytoken, allowTo("admin"), getAllTransactions);
-router.post("/send", verifytoken, transactionsController.sendMoney);
+router.post(
+  "/send",
+  verifytoken,
+  verifyTransactionPin,
+  transactionsController.sendMoney,
+);
 
 module.exports = router;
