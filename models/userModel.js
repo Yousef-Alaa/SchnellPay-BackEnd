@@ -20,6 +20,15 @@ const findByEmail = async (email) => {
   return result.recordset[0] || null; // Return the user object or null if not found
 };
 
+const findByPhone = async (phone) => {
+  const pool = await poolPromise;
+  const result = await pool
+    .request()
+    .input("phone", sql.NVarChar, phone)
+    .query("SELECT * FROM [USERS] WHERE phone = @phone");
+  return result.recordset[0] || null; // Return the user object or null if not found
+};
+
 const findByUsername = async (username) => {
   const pool = await poolPromise;
   const result = await pool
@@ -241,6 +250,7 @@ const clearResetOtp = async (email) => {
 module.exports = {
   findById,
   findByEmail,
+  findByPhone,
   findByUsername,
   findAll,
   count,
