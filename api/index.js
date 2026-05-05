@@ -1,3 +1,5 @@
+const path = require("path");
+
 const express = require("express");
 
 const app = express();
@@ -8,15 +10,19 @@ const userRoutes = require("../routes/users/usersRoute");
 const transactionsRoutes = require("../routes/transactions/transactionsRoute");
 const authRouter = require("../routes/auth/authRoute");
 const logger = require("../middleware/logger");
+const kycRoutes = require("../routes/kyc/kycRoutes");
 const paymentMethodsRouter = require("../routes/paymentMethods/paymentMethodsRoute");
 const depositMethodRouter = require("../routes/paymentMethods/depositMethodRoute");
 
 app.use(express.json());
 
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
 app.use(logger);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/kyc", kycRoutes);
 
 app.use("/api/v1/atm", atmRoutes);
 app.use("/api/v1/bills", billsRoutes);
