@@ -7,13 +7,17 @@ const getAllTransactionController = asyncyWrapper(async (req, res) => {
   const skip = (page - 1) * limit;
   const type = req.query.type || null;
   const status = req.query.status || null;
+  const from = req.query.from || null;
+  const to = req.query.to || null;
   const transactions = await transactionModel.getAllTransactions({
     limit,
     offset: skip,
     type,
-    status, 
+    status,
+    from,
+    to,
   });
-  const total = await transactionModel.countAll({ type, status });
+  const total = await transactionModel.countAll({ type, status, from, to });
   res.status(200).json({
     success: true,
     results: transactions.length,
