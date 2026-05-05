@@ -1,4 +1,5 @@
 const express = require("express");
+const twoFaRoutes = require("./twoFaRoutes");
 const register = require("../../controllers/auth/register");
 const login = require("../../controllers/auth/login");
 const verifyEmail = require("../../controllers/auth/verifyEmail");
@@ -33,5 +34,7 @@ router.post(
   resendLimit.verifyResetOtpLimiter,
   verifyResetOTP,
 );
+
+router.use("/2fa", twoFaRoutes);
 
 module.exports = router;

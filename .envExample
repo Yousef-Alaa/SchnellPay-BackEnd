@@ -8,6 +8,7 @@ DB_USER=
 DB_PASSWORD=
 
 SECRET_KEY=your_jwt_secret
+MFA_TOKEN_SECRET=some_strong_secret_different_from_JWT_secret
 
 MAIL_PORT =
 MAIL_SECURE = true or false
