@@ -86,7 +86,14 @@ const createAtmTransaction = async (
 };
 
 // Get transactions with optional filters for type and status, and pagination for admin dashboard
-const getAllTransactions = async ({ limit, offset, type, status }) => {
+const getAllTransactions = async ({
+  limit,
+  offset,
+  type,
+  status,
+  from,
+  to,
+}) => {
   let filter = "WHERE 1=1";
 
   const pool = await poolPromise;
@@ -104,6 +111,14 @@ const getAllTransactions = async ({ limit, offset, type, status }) => {
     filter += ` AND t.status = @status`;
     request.input("status", sql.NVarChar, status);
   }
+  if (from) {
+    filter += ` AND t.created_at >= @from`;
+    request.input("from", sql.DateTime, from);
+  }
+  if (to) {
+    filter += ` AND t.created_at <= @to`;
+    request.input("to", sql.DateTime, to);
+  }
 
   const result = await request.query(`
     SELECT t.*, 
@@ -119,7 +134,7 @@ const getAllTransactions = async ({ limit, offset, type, status }) => {
 
   return result.recordset;
 };
-const countAll = async ({ type, status }) => {
+const countAll = async ({ type, status, from, to }) => {
   let filter = "WHERE 1=1";
 
   const pool = await poolPromise;
@@ -135,6 +150,16 @@ const countAll = async ({ type, status }) => {
     request.input("status", sql.NVarChar, status);
   }
 
+  if (from) {
+    filter += ` AND created_at >= @from`;
+    request.input("from", sql.DateTime, from);
+  }
+
+  if (to) {
+    filter += ` AND created_at <= @to`;
+    request.input("to", sql.DateTime, to);
+  }
+
   const result = await request.query(`
     SELECT COUNT(*) AS total FROM [TRANSACTIONS] ${filter}
   `);
@@ -142,7 +167,10 @@ const countAll = async ({ type, status }) => {
   return result.recordset[0].total;
 };
 
-const findByUserId = async (userId, { limit, offset, type, status }) => {
+const findByUserId = async (
+  userId,
+  { limit, offset, type, status, from, to },
+) => {
   let filter = `WHERE (t.sender_id = @userId OR t.receiver_id = @userId)`;
 
   const pool = await poolPromise;
@@ -162,6 +190,16 @@ const findByUserId = async (userId, { limit, offset, type, status }) => {
     request.input("status", sql.NVarChar, status);
   }
 
+  if (from) {
+    filter += ` AND t.created_at >= @from`;
+    request.input("from", sql.DateTime, from);
+  }
+
+  if (to) {
+    filter += ` AND t.created_at <= @to`;
+    request.input("to", sql.DateTime, to);
+  }
+
   const result = await request.query(`
     SELECT t.*,
            s.f_name + ' ' + s.l_name AS sender_name,
@@ -177,7 +215,7 @@ const findByUserId = async (userId, { limit, offset, type, status }) => {
   return result.recordset;
 };
 
-const countByUserId = async (userId, { type, status }) => {
+const countByUserId = async (userId, { type, status, from, to }) => {
   let filter = `WHERE (sender_id = @userId OR receiver_id = @userId)`;
 
   const pool = await poolPromise;
@@ -191,6 +229,16 @@ const countByUserId = async (userId, { type, status }) => {
   if (status) {
     filter += ` AND status = @status`;
     request.input("status", sql.NVarChar, status);
+  }
+
+  if (from) {
+    filter += ` AND created_at >= @from`;
+    request.input("from", sql.DateTime, from);
+  }
+
+  if (to) {
+    filter += ` AND created_at <= @to`;
+    request.input("to", sql.DateTime, to);
   }
 
   const result = await request.query(`
