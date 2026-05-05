@@ -87,18 +87,21 @@ const deleteMeLimiter = rateLimit({
 const adminGetUsersLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 60,
+  message: "Too many requests, try again later",
 });
 
 // Admin update user
 const adminUpdateUserLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 15,
+  message: "Too many update attempts, try again later",
 });
 
 // Admin delete user
 const adminDeleteUserLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
+  message: "Too many delete attempts, try again later",
 });
 
 const transactionLimiter = rateLimit({
