@@ -12,8 +12,8 @@ const {
 // @access Private
 const logout = asyncWrapper(async (req, res, next) => {
     
-    const plainToken = req.cookies?.refresh_token;
-    const { all_devices } = req.body; // optional — if true, revoke all sessions
+    const plainToken  = req.cookies?.refresh_token;
+    const all_devices = req.body?.all_devices; // optional — if true, revoke all sessions
 
     // Revoke all devices
     if (all_devices === true) {
