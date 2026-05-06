@@ -10,6 +10,8 @@ const resetPassword = require("../../controllers/auth/resetPassword");
 const forgetPassword = require("../../controllers/auth/forgetPassword");
 const verifyToken = require("../../middleware/verifyToken");
 const verifyResetOTP = require("../../controllers/auth/verifyResetOtp");
+const refreshToken = require("../../controllers/auth/refreshToken");
+const logout       = require("../../controllers/auth/logout");
 
 const router = express.Router();
 
@@ -34,6 +36,9 @@ router.post(
   resendLimit.verifyResetOtpLimiter,
   verifyResetOTP,
 );
+
+router.post("/refresh-token", refreshToken);
+router.post("/logout", verifyToken, logout);
 
 router.use("/2fa", twoFaRoutes);
 

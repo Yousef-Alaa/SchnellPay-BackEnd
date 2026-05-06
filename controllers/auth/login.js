@@ -1,10 +1,10 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const asyncWrapper = require("../../middleware/asyncWrapper");
-const AppError = require("../../utils/appError");
-const generateJWT = require("../../utils/generatJwt");
-const UserModel = require("../../models/userModel");
+const asyncWrapper     = require("../../middleware/asyncWrapper");
+const AppError         = require("../../utils/appError");
+const issueTokens      = require("../../utils/issueTokens");
+const UserModel        = require("../../models/userModel");
 const { getMfaStatus } = require("../../models/twoFaModel");
 
 // @desc   User Login
@@ -61,19 +61,13 @@ const login = asyncWrapper(async (req, res, next) => {
         });
     }
 
-    // No MFA — issue JWT immediately
-    const token = generateJWT({
-        id: user.user_id,
-        email: user.email,
-        name: `${user.f_name} ${user.l_name}`,
-        role: user.role,
-        username: user.user_name,
-    });
+    // No MFA — issue access token + refresh token
+    const accessToken = await issueTokens(user, res);
 
     return res.status(200).json({
         success: true,
         message: "User logged in successfully.",
-        token,
+        token:   accessToken,
     });
 });
 
