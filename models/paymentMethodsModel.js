@@ -75,9 +75,11 @@ const deletePaymentMethod = async (userId, methodId) => {
 const setDefaultPaymentMethod = async (userId, methodId) => {
     const pool = await poolPromise;
     const transaction = new sql.Transaction(pool);
+    let transactionStarted = false;
 
     try {
         await transaction.begin();
+        transactionStarted = true;
 
         // first: Set ALL of the user's payment methods to NOT default (0)
         await new sql.Request(transaction)
@@ -100,11 +102,12 @@ const setDefaultPaymentMethod = async (userId, methodId) => {
             `);
 
         await transaction.commit();
+        transactionStarted = false;
         
         return result.rowsAffected[0] > 0;
 
     } catch (error) {
-        await transaction.rollback();
+        if (transactionStarted) await transaction.rollback();
         throw error;
     }
 };

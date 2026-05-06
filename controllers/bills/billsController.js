@@ -59,15 +59,16 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
 
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
+  let transactionStarted = false;
 
   try {
     await transaction.begin();
+    transactionStarted = true;
 
     const deducted = await deductBalance(transaction, userId, totalAmount);
 
     if (!deducted) {
-      await transaction.rollback();
-      return next(AppError.create("Insufficient balance", 400, false));
+      throw AppError.create("Insufficient balance", 400, false);
     }
 
     const refNumber = crypto.randomBytes(8).toString("hex");
@@ -88,6 +89,7 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
     );
 
     await transaction.commit();
+    transactionStarted = false;
 
     createNotification(
       userId,
@@ -107,7 +109,7 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
       },
     });
   } catch (err) {
-    await transaction.rollback();
+    if (transactionStarted) await transaction.rollback();
     next(err);
   }
 });

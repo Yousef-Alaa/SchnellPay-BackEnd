@@ -6,9 +6,11 @@ const addMobileWallet = async (userId, walletData) => {
     
     const pool = await poolPromise;
     const transaction = new sql.Transaction(pool);
+    let transactionStarted = false;
 
     try {
         await transaction.begin();
+        transactionStarted = true;
 
         // first: Insert into PAYMENT_METHODS ---
         const request1 = new sql.Request(transaction);
@@ -37,6 +39,7 @@ const addMobileWallet = async (userId, walletData) => {
             `);
 
         await transaction.commit();
+        transactionStarted = false;
 
         return { 
             methodId, 
@@ -47,7 +50,7 @@ const addMobileWallet = async (userId, walletData) => {
         };
 
     } catch (error) {
-        await transaction.rollback();
+        if (transactionStarted) await transaction.rollback();
         throw error;
     }
 };
