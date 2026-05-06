@@ -7,6 +7,7 @@ const asyncWrapper = require("../../middleware/asyncWrapper");
 const { findByUsername } = require("../../models/userModel");
 const { deductBalance, addBalance } = require("../../models/walletModel");
 const { createTransaction } = require("../../models/transactionModel");
+const { createNotification } = require("../../utils/notificationHelper");
 
 // @desc Send Money To another user
 // @route POST /api/v1/transactions/send
@@ -67,6 +68,23 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
     );
 
     await transaction.commit();
+
+    // Create notifications for both sender and receiver
+    createNotification(
+      sender.user_id,
+      "Money Sent",
+      `You successfully sent ${amount} EGP to ${receiver_username}. Ref: ${refNumber}`,
+      "TRANSACTION",
+      sender.email,
+    );
+
+    createNotification(
+      receiver.user_id,
+      "Money Received",
+      `You received ${amount} EGP from ${sender_username}. Ref: ${refNumber}`,
+      "TRANSACTION",
+      receiver.email,
+    );
 
     res.json({
       success: true,

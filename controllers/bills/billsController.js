@@ -11,6 +11,7 @@ const { deductBalance } = require("../../models/walletModel");
 const { createBillTransaction } = require("../../models/transactionModel");
 const { createBillDetails } = require("../../models/billDatailsModel");
 const asyncWrapper = require("../../middleware/asyncWrapper");
+const { createNotification } = require("../../utils/notificationHelper");
 
 // @desc Get All Providers
 // @route GET /api/v1/bills/providers
@@ -43,8 +44,7 @@ exports.getServices = asyncWrapper(async (req, res, next) => {
 // @access Private
 exports.payBill = asyncWrapper(async (req, res, next) => {
   const { service_id, provider_id, amount, consumer_number } = req.body;
-  const userId = 1;
-  // const userId = req.user.id; TODO
+  const userId = req.user.id; 
 
   if (!amount || amount <= 0) {
     return next(AppError.create("Invalid amount", 400, false));
@@ -88,6 +88,14 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
     );
 
     await transaction.commit();
+
+    createNotification(
+      userId,
+      "Bill Payment Success",
+      `Your payment of ${totalAmount} EGP for ${service.service_name} (Consumer: ${consumer_number}) was successful. Reference: ${refNumber}.`,
+      "BILL",
+      req.user?.email,
+    );
 
     res.json({
       success: true,
