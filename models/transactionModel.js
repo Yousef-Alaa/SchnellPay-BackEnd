@@ -250,26 +250,23 @@ const countByUserId = async (userId, { type, status, from, to }) => {
 };
 
 const getPinByUserId = async (userId) => {
-  try {
-    const pool = await poolPromise;
+  const pool = await poolPromise;
 
-    const result = await pool.request().input("userId", sql.Int, userId).query(`
-        SELECT transactionPin 
-        FROM Users 
-        WHERE id = @userId
-      `);
+  const request = pool.request().input("userId", sql.Int, userId);
 
-    if (result.recordset.length === 0) {
-      return null;
-    }
+  const result = await request.query(`
+    SELECT transaction_Pin 
+    FROM Users 
+    WHERE user_id = @userId
+  `);
 
-    return result.recordset[0].transactionPin;
-  } catch (err) {
-    throw new appError(`Database Error: ${err.message}`, 500);
+  if (result.recordset.length === 0) {
+    return null;
   }
+
+  return result.recordset[0].transaction_Pin;
 };
 
-module.exports = getPinByUserId;
 module.exports = {
   createBillTransaction,
   createTransaction,

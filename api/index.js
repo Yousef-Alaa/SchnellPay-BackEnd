@@ -14,6 +14,8 @@ const kycRoutes = require("../routes/kyc/kycRoutes");
 const paymentMethodsRouter = require("../routes/paymentMethods/paymentMethodsRoute");
 const depositMethodRouter = require("../routes/paymentMethods/depositMethodRoute");
 
+const notificationRoute = require("../routes/notification/notificationRoute");
+
 app.use(cookieParser());
 app.use(express.json());
 
@@ -24,13 +26,14 @@ app.use(logger);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/kyc", kycRoutes);
+app.use("/api/v1/notifications", notificationRoute);
 
 app.use("/api/v1/atm", atmRoutes);
 app.use("/api/v1/bills", billsRoutes);
 app.use("/api/v1/transactions", transactionsRoutes);
 
-app.use("/api/v1/payment-methods",paymentMethodsRouter);
-app.use("/api/v1/wallet/deposit",depositMethodRouter);
+app.use("/api/v1/payment-methods", paymentMethodsRouter);
+app.use("/api/v1/wallet/deposit", depositMethodRouter);
 
 //global middleware for wrong routing
 app.use((req, res) => {
