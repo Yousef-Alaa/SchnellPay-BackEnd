@@ -6,6 +6,7 @@ const AppError         = require("../../utils/appError");
 const issueTokens      = require("../../utils/issueTokens");
 const UserModel        = require("../../models/userModel");
 const { getMfaStatus } = require("../../models/twoFaModel");
+const logActivity = require("../../utils/logActivity");
 
 // @desc   User Login
 // @route  POST /api/v1/auth/login
@@ -21,8 +22,10 @@ const login = asyncWrapper(async (req, res, next) => {
         return next(AppError.create("Invalid email or password.", 401, false));
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
+    if (!isPasswordValid) {
+        await logActivity(user.user_id, "login_failed", "Failed login attempt — incorrect password.", req);
         return next(AppError.create("Invalid email or password.", 401, false));
+    }
 
     if (!user.is_verified) {
         return next(
@@ -63,6 +66,10 @@ const login = asyncWrapper(async (req, res, next) => {
 
     // No MFA — issue access token + refresh token
     const accessToken = await issueTokens(user, res);
+
+    // Fire-and-forget — never awaited in a way that blocks the response
+    await logActivity(user.user_id, "login_success", "Logged in successfully.", req);
+    
 
     return res.status(200).json({
         success: true,

@@ -2,12 +2,12 @@ const bcrypt    = require("bcryptjs");
 const speakeasy = require("speakeasy");
 const qrcode    = require("qrcode");
 const crypto    = require("crypto");
+const jwt       = require("jsonwebtoken");
 
 const issueTokens  = require("../../utils/issueTokens");
 const AppError     = require("../../utils/appError");
 const asyncWrapper = require("../../middleware/asyncWrapper");
-const generateJWT  = require("../../utils/generatJwt");
-const { findById } = require("../../models/userModel");
+const { findById, findByUsername } = require("../../models/userModel");
 const {
     getMfaStatus,
     getMfaStatusByUsername,
@@ -20,6 +20,7 @@ const {
     getUnusedBackupCodes,
     markBackupCodeUsed,
 } = require("../../models/twoFaModel");
+const logActivity = require("../../utils/logActivity");
 const { sendOtpEmail, sendBackupCodesEmail } = require("../../utils/mfaMailer");
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -178,6 +179,8 @@ const verifySetup = asyncWrapper(async (req, res, next) => {
     const user = await findById(userId);
     await sendBackupCodesEmail(user.email, user.f_name, plainCodes);
 
+    await logActivity(userId, "2fa_enabled", `Two-factor authentication enabled via ${method}.`, req);
+
     return res.status(200).json({
         status:  "success",
         message: "MFA enabled. Backup codes have been sent to your email — store them safely. They will not be shown again.",
@@ -228,27 +231,35 @@ const validateMfa = asyncWrapper(async (req, res, next) => {
     const { mfa_token, code } = req.body;
 
     if (!code) return next(AppError.create("Code is required.", 400, false));
+    if (!mfa_token)
+        return next(AppError.create("No MFA Token Provided Please login First.", 400, false));
 
     // Verify the mfa_token — proves /login was called first and password passed
-    const decoded = resolveMfaToken(mfa_token, next);
-    if (!decoded) return;
+    // const decoded = resolveMfaToken(mfa_token, next);
+    // if (!decoded) return;
 
-    const mfa = await getMfaStatus(decoded.user_id);
+    const decodedToken = jwt.verify(mfa_token, process.env.MFA_TOKEN_SECRET);
+    
+    const mfa = await getMfaStatusByUsername(decodedToken.username);
     if (!mfa) return next(AppError.create("User not found.", 404, false));
-
-    if (!mfa.mfa_enabled) {
+    
+    if (!mfa.mfa_enabled)
         return next(AppError.create("MFA is not enabled for this account.", 400, false));
-    }
-
+    
+    if (decodedToken.method != mfa.mfa_method) 
+        return next(AppError.create("Method not Match Request.", 400, false));
+    
+    const user = await findByUsername(decodedToken.username);
+    
     let verified = false;
 
     // ── Email OTP ─────────────────────────────────────────────────────────────
     if (mfa.mfa_method === "email" && mfa.otp_code && mfa.otp_expires_at) {
         if (new Date(mfa.otp_expires_at) >= new Date()) {
             verified = await bcrypt.compare(code, mfa.otp_code);
-            if (verified) await clearOtp(decoded.user_id);
+            if (verified) await clearOtp(user.user_id);
         } else {
-            await clearOtp(decoded.user_id);
+            await clearOtp(user.user_id);
         }
     }
 
@@ -264,7 +275,7 @@ const validateMfa = asyncWrapper(async (req, res, next) => {
 
     // ── Backup code fallback ──────────────────────────────────────────────────
     if (!verified) {
-        const codeId = await verifyBackupCode(decoded.user_id, code);
+        const codeId = await verifyBackupCode(user.user_id, code);
         if (codeId) {
             await markBackupCodeUsed(codeId);
             verified = true;
@@ -276,8 +287,9 @@ const validateMfa = asyncWrapper(async (req, res, next) => {
     }
 
     // ── Issue access token + refresh token ────────────────────────────────────
-    const user        = await findById(decoded.user_id);
     const accessToken = await issueTokens(user, res); // sets httpOnly cookie + returns access token
+
+    await logActivity(user.user_id, "login_success", "Logged in successfully via MFA.", req);
 
     return res.status(200).json({
         success: true,
@@ -339,6 +351,7 @@ const regenerateBackupCodes = asyncWrapper(async (req, res, next) => {
 
     const user = await findById(userId);
     await sendBackupCodesEmail(user.email, user.f_name, plainCodes);
+    await logActivity(userId, "backup_codes_regenerated", "Backup codes regenerated.", req);
 
     return res.status(200).json({
         status:  "success",
@@ -399,6 +412,7 @@ const disableMfaHandler = asyncWrapper(async (req, res, next) => {
     }
 
     await disableMfa(userId);
+    await logActivity(userId, "2fa_disabled", "Two-factor authentication disabled.", req);
 
     return res.status(200).json({
         status:  "success",

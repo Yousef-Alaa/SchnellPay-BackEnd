@@ -1,7 +1,9 @@
+const bcrypt = require("bcryptjs");
+
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const AppError = require("../../utils/appError");
 const UserModel = require("../../models/userModel");
-const bcrypt = require("bcryptjs");
+const logActivity = require("../../utils/logActivity");
 
 const changePassword = asyncWrapper(async (req, res, next) => {
   const userId = req.user.id;
@@ -36,6 +38,7 @@ const changePassword = asyncWrapper(async (req, res, next) => {
   }
   const hashedPassword = await bcrypt.hash(newPassword, 10);
   await UserModel.updatePasswordById(userId, hashedPassword);
+  await logActivity(userId, "password_changed", "Account password changed.", req);
   res.status(200).json({
     success: true,
     message: "Password changed successfully",

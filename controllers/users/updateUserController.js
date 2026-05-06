@@ -1,6 +1,7 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const UserModel = require("../../models/userModel");
 const AppError = require("../../utils/appError");
+const logActivity = require("../../utils/logActivity");
 
 const updateUserController = asyncWrapper(async (req, res, next) => {
   const id = req.user.id || req.params.id; // Use req.user.id for /updateMe and req.params.id for admin update
@@ -17,6 +18,18 @@ const updateUserController = asyncWrapper(async (req, res, next) => {
     const error = AppError.create("User not found or nothing updated", 404);
     return next(error);
   }
+
+  // Build a description that lists exactly what fields changed
+  const changedFields = [];
+  if (fields.f_name || fields.l_name) changedFields.push("name");
+  if (fields.email)                   changedFields.push("email");
+  if (fields.phone)                   changedFields.push("phone");
+  
+  const description = changedFields.length
+      ? `Profile updated — changed: ${changedFields.join(", ")}.`
+      : "Profile updated.";
+  
+  await logActivity(id, "profile_updated", description, req);
 
   res.status(200).json({
     success: true,

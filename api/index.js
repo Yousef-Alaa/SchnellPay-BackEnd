@@ -14,6 +14,7 @@ const kycRoutes = require("../routes/kyc/kycRoutes");
 const paymentMethodsRouter = require("../routes/paymentMethods/paymentMethodsRoute");
 const depositMethodRouter = require("../routes/paymentMethods/depositMethodRoute");
 
+const activityLogRoutes = require("../routes/activityLog/activityLogRoutes");
 const notificationRoute = require("../routes/notification/notificationRoute");
 
 app.use(cookieParser());
@@ -26,6 +27,7 @@ app.use(logger);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/kyc", kycRoutes);
+app.use("/api/v1/activity-log", activityLogRoutes);
 app.use("/api/v1/notifications", notificationRoute);
 
 app.use("/api/v1/atm", atmRoutes);
