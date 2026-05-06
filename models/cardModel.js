@@ -12,9 +12,11 @@ const addCard = async (userId, cardData) => {
     
     const pool = await poolPromise;
     const transaction = new sql.Transaction(pool);
+    let transactionStarted = false;
 
     try {
         await transaction.begin();
+        transactionStarted = true;
 
         // first: Insert into PAYMENT_METHODS ---
         const request1 = new sql.Request(transaction);
@@ -48,6 +50,7 @@ const addCard = async (userId, cardData) => {
                 `);
 
         await transaction.commit();
+        transactionStarted = false;
 
         return { 
             methodId, 
@@ -60,7 +63,7 @@ const addCard = async (userId, cardData) => {
         };
 
     } catch (error) {
-        await transaction.rollback();
+        if (transactionStarted) await transaction.rollback();
         throw error;
     }
 };
