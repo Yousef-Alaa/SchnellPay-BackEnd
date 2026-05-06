@@ -3,11 +3,12 @@ const nodemailer = require("nodemailer");
 const otpTemplate = require("./emailTemplates/otp");
 const welcomeTemplate = require("./emailTemplates/welcome");
 const transactionTemplate = require("./emailTemplates/transaction");
-
+const notificationTemplate = require("./emailTemplates/notification");
 const templates = {
   OTP: otpTemplate,
   WELCOME: welcomeTemplate,
   TRANSACTION: transactionTemplate,
+  NOTIFICATION: notificationTemplate,
 };
 
 const sendEmail = async (to, subject, type, dataArray) => {
