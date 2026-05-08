@@ -64,7 +64,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
         transactionStarted = false;
 
         // Create notifications for both sender and receiver
-        createNotification(
+        await createNotification(
             sender.user_id,
             "Money Sent",
             `You successfully sent ${amount} EGP to ${receiver_username}. Ref: ${refNumber}`,
@@ -72,7 +72,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
             sender.email,
         );
 
-        createNotification(
+        await createNotification(
             receiver.user_id,
             "Money Received",
             `You received ${amount} EGP from ${sender.username}. Ref: ${refNumber}`,
