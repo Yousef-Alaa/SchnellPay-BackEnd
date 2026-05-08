@@ -2,6 +2,29 @@ const { poolPromise, sql } = require("../config/db");
 
 // ── Find ──────────────────────────────────────────────────────────────────────
 
+const searchUsers = async (q) => {
+    const pool        = await poolPromise;
+    const likeParam   = `%${q}%`; // for username LIKE search
+    const exactParam  = q;        // for phone exact match
+    
+    const result = await pool
+        .request()
+        .input("like_q",  sql.NVarChar, likeParam)
+        .input("exact_q", sql.NVarChar, exactParam)
+        .query(`
+        SELECT TOP 10 user_name, (f_name + ' ' + l_name) AS full_name
+        FROM [USERS]
+        WHERE account_status = 'active'
+            AND (
+            user_name LIKE @like_q
+            OR phone = @exact_q
+            )
+        ORDER BY user_name ASC
+        `);
+        
+    return result.recordset;
+};
+
 const findById = async (id) => {
   const pool = await poolPromise;
   const result = await pool
@@ -248,20 +271,21 @@ const clearResetOtp = async (email) => {
 };
 
 module.exports = {
-  findById,
-  findByEmail,
-  findByPhone,
-  findByUsername,
-  findAll,
-  count,
-  create,
-  update,
-  deleteUser,
-  updateOTP,
-  activateUser,
-  updatePassword,
-  updatePasswordById,
-  saveResetOtp,
-  markOtpVerified,
-  clearResetOtp,
+    searchUsers,
+    findById,
+    findByEmail,
+    findByPhone,
+    findByUsername,
+    findAll,
+    count,
+    create,
+    update,
+    deleteUser,
+    updateOTP,
+    activateUser,
+    updatePassword,
+    updatePasswordById,
+    saveResetOtp,
+    markOtpVerified,
+    clearResetOtp,
 };
