@@ -6,18 +6,20 @@ const {
   getProviders,
   getServicesByProvider,
   findService,
+  getAllServices
 } = require("../../models/billModel");
 const { deductBalance } = require("../../models/walletModel");
 const { createBillTransaction } = require("../../models/transactionModel");
 const { createBillDetails } = require("../../models/billDatailsModel");
 const asyncWrapper = require("../../middleware/asyncWrapper");
+const AppError = require("../../utils/appError");
 const { createNotification } = require("../../utils/notificationHelper");
 
-// @desc Get All Providers
+// @desc Get All Active Providers
 // @route GET /api/v1/bills/providers
 // @access Private
 exports.getProviders = asyncWrapper(async (req, res, next) => {
-  const providers = await getProviders();
+  const providers = await getProviders(true); // true = active only
 
   res.json({
     success: true,
@@ -25,13 +27,25 @@ exports.getProviders = asyncWrapper(async (req, res, next) => {
   });
 });
 
-// @desc Get All Sevices for Specific Provider
+// @desc Get All Active Services
+// @route GET /api/v1/bills/services
+// @access Private
+exports.getAllServicesUser = asyncWrapper(async (req, res, next) => {
+  const services = await getAllServices(true); // true = active only
+
+  res.json({
+    success: true,
+    data: services,
+  });
+});
+
+// @desc Get All Active Sevices for Specific Provider
 // @route GET /api/v1/bills/providers/:providerId/services
 // @access Private
 exports.getServices = asyncWrapper(async (req, res, next) => {
   const { providerId } = req.params;
 
-  const services = await getServicesByProvider(providerId);
+  const services = await getServicesByProvider(providerId, true); // true = active only
 
   res.json({
     success: true,
@@ -55,7 +69,7 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
     return next(AppError.create("Service not found", 404, false));
   }
 
-  const totalAmount = amount + service.fees;
+  const totalAmount = amount + service.fee;
 
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
