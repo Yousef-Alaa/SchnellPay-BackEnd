@@ -10,10 +10,23 @@ const {
 } = require("../../models/billModel");
 const { deductBalance } = require("../../models/walletModel");
 const { createBillTransaction } = require("../../models/transactionModel");
-const { createBillDetails } = require("../../models/billDatailsModel");
+const { createBillDetails, getBillsByUserId } = require("../../models/billDatailsModel");
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const AppError = require("../../utils/appError");
 const { createNotification } = require("../../utils/notificationHelper");
+
+// @desc Get User's Bills History
+// @route GET /api/v1/bills/history
+// @access Private
+exports.getUserBills = asyncWrapper(async (req, res, next) => {
+  const userId = req.user.id;
+  const bills = await getBillsByUserId(userId);
+
+  res.json({
+    success: true,
+    data: bills,
+  });
+});
 
 // @desc Get All Active Providers
 // @route GET /api/v1/bills/providers
@@ -57,17 +70,15 @@ exports.getServices = asyncWrapper(async (req, res, next) => {
 // @route POST /api/v1/bills/pay
 // @access Private
 exports.payBill = asyncWrapper(async (req, res, next) => {
-  const { service_id, provider_id, amount, consumer_number } = req.body;
+  
+  const { service_id, amount, consumer_number } = req.body;
   const userId = req.user.id; 
 
-  if (!amount || amount <= 0) {
-    return next(AppError.create("Invalid amount", 400, false));
-  }
+  if (!amount || amount <= 0) return next(AppError.create("Invalid amount", 400, false));
 
-  const service = await findService(service_id, provider_id);
-  if (!service) {
-    return next(AppError.create("Service not found", 404, false));
-  }
+  const service = await findService(service_id);
+  
+  if (!service) return next(AppError.create("Service not found", 404, false));
 
   const totalAmount = amount + service.fee;
 
@@ -76,14 +87,14 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
   let transactionStarted = false;
 
   try {
+
     await transaction.begin();
     transactionStarted = true;
 
     const deducted = await deductBalance(transaction, userId, totalAmount);
 
-    if (!deducted) {
-      throw AppError.create("Insufficient balance", 400, false);
-    }
+    if (!deducted) throw AppError.create("Insufficient balance", 400, false);
+    
 
     const refNumber = crypto.randomBytes(8).toString("hex");
 
@@ -98,7 +109,7 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
       transaction,
       transaction_id,
       service_id,
-      provider_id,
+      service.provider_id,
       consumer_number,
     );
 

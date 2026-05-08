@@ -8,13 +8,22 @@ const verifyTransactionPin = require("../../middleware/verifyPin");
 const allowTo = require("../../middleware/allowTo");
 
 // --- User Routes ---
+router.get("/history", verifyToken, billsController.getUserBills);
 router.get("/providers", verifyToken, billsController.getProviders);
 router.get("/services", verifyToken, billsController.getAllServicesUser);
-router.get("/providers/:providerId/services", verifyToken, billsController.getServices);
+router.get(
+  "/providers/:providerId/services",
+  verifyToken,
+  billsController.getServices
+);
 
 router.post("/pay", verifyToken, verifyTransactionPin, billsController.payBill);
 
 // --- Admin Routes ---
+// History
+router.get("/admin/history", verifyToken, allowTo("admin"), billsAdminController.getAllBillsAdmin);
+router.get("/admin/history/:userId", verifyToken, allowTo("admin"), billsAdminController.getUserBillsAdmin);
+
 // Providers
 router.get("/admin/providers", verifyToken, allowTo("admin"), billsAdminController.getAllAdminProviders);
 router.post("/admin/providers", verifyToken, allowTo("admin"), billsAdminController.addProvider);

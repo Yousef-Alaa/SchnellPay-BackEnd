@@ -114,7 +114,7 @@ const deleteService = async (service_id) => {
 const getAllServices = async (activeOnly = false) => {
     const pool = await poolPromise;
     let query = `
-        SELECT s.*, p.name as provider_name 
+        SELECT s.*, p.provider_name 
         FROM BILLS_SERVICES s
         JOIN BILLS_PROVIDERS p ON s.provider_id = p.provider_id
     `;
@@ -143,17 +143,16 @@ const getServicesByProvider = async (providerId, activeOnly = false) => {
     return result.recordset;
 };
 
-const findService = async (serviceId, providerId) => {
+const findService = async (serviceId) => {
     const pool = await poolPromise;
 
     const result = await pool
         .request()
         .input("service_id", sql.Int, serviceId)
-        .input("provider_id", sql.Int, providerId)
         .query(`
-        SELECT *
-        FROM BILLS_SERVICES
-        WHERE service_id = @service_id AND provider_id = @provider_id AND is_active = 1
+            SELECT *
+            FROM BILLS_SERVICES
+            WHERE service_id = @service_id AND is_active = 1
         `);
 
     return result.recordset[0] || null;

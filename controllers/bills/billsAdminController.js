@@ -10,6 +10,30 @@ const {
   deleteService,
   getAllServices,
 } = require("../../models/billModel");
+const { getAllBills, getBillsByUserId } = require("../../models/billDatailsModel");
+
+// @desc Get All Bills (Admin)
+// @route GET /api/v1/bills/admin/history
+// @access Private (Admin)
+exports.getAllBillsAdmin = asyncWrapper(async (req, res, next) => {
+  const bills = await getAllBills();
+  res.json({
+    success: true,
+    data: bills,
+  });
+});
+
+// @desc Get Bills for a Specific User (Admin)
+// @route GET /api/v1/bills/admin/history/:userId
+// @access Private (Admin)
+exports.getUserBillsAdmin = asyncWrapper(async (req, res, next) => {
+  const { userId } = req.params;
+  const bills = await getBillsByUserId(userId);
+  res.json({
+    success: true,
+    data: bills,
+  });
+});
 
 // @desc Create a Provider
 // @route POST /api/v1/bills/admin/providers
