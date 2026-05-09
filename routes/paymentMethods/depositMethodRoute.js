@@ -4,8 +4,10 @@ const { paymentMethodDeposit } = require("../../controllers/paymentMethods/depos
 
 const express = require("express");
 const router = express.Router();
+const { walletDepositLimiter } = require("../../middleware/rateLimiter");
 
 router.post("/",
+    walletDepositLimiter,
     verifyToken,
     verifyTransactionPin,
     paymentMethodDeposit
