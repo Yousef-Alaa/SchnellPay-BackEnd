@@ -9,8 +9,9 @@ const searchUsersController    = require("../../controllers/users/searchUsersCon
 const allowTo                  = require("../../middleware/allowTo");
 const resendLimit              = require("../../middleware/resendLimit");
 const verifyToken              = require("../../middleware/verifyToken");
+const { userSearchLimiter }    = require("../../middleware/rateLimiter");
 
-router.get("/search", verifyToken, searchUsersController);
+router.get("/search", userSearchLimiter, verifyToken, searchUsersController);
 router.get("/getMe", verifyToken, getSingleUserController);
 router.patch("/updateMe", resendLimit.updateMeLimiter, verifyToken, updateUserController);
 router.delete("/deleteMe", resendLimit.deleteMeLimiter, verifyToken, deletUserController);

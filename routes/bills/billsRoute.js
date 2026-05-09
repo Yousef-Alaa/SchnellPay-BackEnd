@@ -6,6 +6,7 @@ const billsAdminController = require("../../controllers/bills/billsAdminControll
 const verifyToken = require("../../middleware/verifyToken");
 const verifyTransactionPin = require("../../middleware/verifyPin");
 const allowTo = require("../../middleware/allowTo");
+const { billPayLimiter } = require("../../middleware/rateLimiter");
 
 // --- User Routes ---
 router.get("/history", verifyToken, billsController.getUserBills);
@@ -17,7 +18,7 @@ router.get(
   billsController.getServices
 );
 
-router.post("/pay", verifyToken, verifyTransactionPin, billsController.payBill);
+router.post("/pay", billPayLimiter, verifyToken, verifyTransactionPin, billsController.payBill);
 
 // --- Admin Routes ---
 // History

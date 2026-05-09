@@ -5,11 +5,11 @@ const allowTo      = require("../../middleware/allowTo");
 const kycUpload    = require("../../middleware/kycUpload");
 const { submitKyc, getKycStatus }         = require("../../controllers/kyc/kycController");
 const { listKyc, getKycById, reviewKyc }  = require("../../controllers/kyc/kycAdminController");
-
+const { kycSubmitLimiter } = require("../../middleware/rateLimiter");
 
 
 // ── User routes ───────────────────────────────────────────────────────────────
-router.post("/submit", verifyToken, kycUpload, submitKyc);
+router.post("/submit", kycSubmitLimiter, verifyToken, kycUpload, submitKyc);
 router.get("/status", verifyToken, getKycStatus);
 
 
