@@ -24,50 +24,6 @@ const {
 
 const router = express.Router();
 
-<<<<<<< HEAD
-/**
- * @swagger
- * /api/v1/auth/register:
- *   post:
- *     tags: [Auth]
- *     summary: Register a new user account
- *     description: Creates a new user, hashes password and transaction PIN (bcrypt), and sends a 6-digit email OTP for verification. Wallet is NOT created here — it is created after email verification.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/RegisterRequest'
- *           example:
- *             fname: Ahmed
- *             lname: Hassan
- *             email: ahmed@example.com
- *             password: StrongPass123!
- *             phone: "01012345678"
- *             country: Egypt
- *             user_name: ahmed99
- *             transaction_pin: "123456"
- *     responses:
- *       201:
- *         description: Account created. OTP sent to email.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean, example: true }
- *                 id: { type: integer, description: New user ID, example: 42 }
- *       400:
- *         description: Missing fields / duplicate email or username / PIN not 6 digits
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       429:
- *         description: Rate limit — 3 requests per minute per IP
- */
-router.post("/register", resendLimit.registerLimiter, register);
-=======
 router.post("/login", loginLimiter, login);
 router.post("/register", registerLimiter, register);
 router.post("/verify-email", verifyEmailLimiter, verifyEmail);
@@ -76,7 +32,6 @@ router.post("/reset-password", resetPasswordLimiter, resetPassword);
 router.post("/change-password", changePasswordLimiter, verifyToken, changePassword);
 router.post("/resend-otp", otpLimiter, resendOtp);
 router.post("/verify-reset-otp", verifyResetOtpLimiter, verifyResetOTP);
->>>>>>> 9bf1c8c315a2cb2d47809a078fcd5f7eb722c00c
 
 /**
  * @swagger
