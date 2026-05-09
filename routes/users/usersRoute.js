@@ -1,14 +1,15 @@
 const express = require("express");
 const router = express.Router();
 
-const getAllUsersController    = require("../../controllers/users/getAllUsersController");
-const getSingleUserController  = require("../../controllers/users/getSingleUserController");
-const updateUserController     = require("../../controllers/users/updateUserController");
-const deletUserController      = require("../../controllers/users/deletUserController");
-const searchUsersController    = require("../../controllers/users/searchUsersController");
-const allowTo                  = require("../../middleware/allowTo");
-const resendLimit              = require("../../middleware/resendLimit");
-const verifyToken              = require("../../middleware/verifyToken");
+const getAllUsersController = require("../../controllers/users/getAllUsersController");
+const getSingleUserController = require("../../controllers/users/getSingleUserController");
+const updateUserController = require("../../controllers/users/updateUserController");
+const deletUserController = require("../../controllers/users/deletUserController");
+const searchUsersController = require("../../controllers/users/searchUsersController");
+const allowTo = require("../../middleware/allowTo");
+const resendLimit = require("../../middleware/resendLimit");
+const verifyToken = require("../../middleware/verifyToken");
+const { userSearchLimiter } = require("../../middleware/rateLimiter");
 
 /**
  * @swagger
@@ -74,6 +75,7 @@ router.get("/search", verifyToken, searchUsersController);
  *       401:
  *         description: Unauthorized
  */
+router.get("/search", userSearchLimiter, verifyToken, searchUsersController);
 router.get("/getMe", verifyToken, getSingleUserController);
 
 /**
@@ -112,7 +114,12 @@ router.get("/getMe", verifyToken, getSingleUserController);
  *       429:
  *         description: Rate limit — 10 per 10 min
  */
-router.patch("/updateMe", resendLimit.updateMeLimiter, verifyToken, updateUserController);
+router.patch(
+  "/updateMe",
+  resendLimit.updateMeLimiter,
+  verifyToken,
+  updateUserController,
+);
 
 /**
  * @swagger
@@ -130,7 +137,12 @@ router.patch("/updateMe", resendLimit.updateMeLimiter, verifyToken, updateUserCo
  *       429:
  *         description: Rate limit — 5 per 10 min
  */
-router.delete("/deleteMe", resendLimit.deleteMeLimiter, verifyToken, deletUserController);
+router.delete(
+  "/deleteMe",
+  resendLimit.deleteMeLimiter,
+  verifyToken,
+  deletUserController,
+);
 
 // ── Admin routes (verifyToken + allowTo("admin") applied to all below) ────────
 router.use(verifyToken, allowTo("admin"));
@@ -252,7 +264,7 @@ router.get("/", resendLimit.adminGetUsersLimiter, getAllUsersController);
  *       403:
  *         description: Admin access required
  */
-router.get("/:id",  resendLimit.adminGetUsersLimiter,  getSingleUserController);
+router.get("/:id", resendLimit.adminGetUsersLimiter, getSingleUserController);
 router.patch("/:id", resendLimit.adminUpdateUserLimiter, updateUserController);
 router.delete("/:id", resendLimit.adminDeleteUserLimiter, deletUserController);
 

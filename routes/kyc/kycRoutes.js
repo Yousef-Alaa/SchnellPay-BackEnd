@@ -1,10 +1,17 @@
-const express      = require("express");
-const router       = express.Router();
-const verifyToken  = require("../../middleware/verifyToken");
-const allowTo      = require("../../middleware/allowTo");
-const kycUpload    = require("../../middleware/kycUpload");
-const { submitKyc, getKycStatus }         = require("../../controllers/kyc/kycController");
-const { listKyc, getKycById, reviewKyc }  = require("../../controllers/kyc/kycAdminController");
+const express = require("express");
+const router = express.Router();
+const verifyToken = require("../../middleware/verifyToken");
+const allowTo = require("../../middleware/allowTo");
+const kycUpload = require("../../middleware/kycUpload");
+const {
+  submitKyc,
+  getKycStatus,
+} = require("../../controllers/kyc/kycController");
+const {
+  listKyc,
+  getKycById,
+  reviewKyc,
+} = require("../../controllers/kyc/kycAdminController");
 
 /**
  * @swagger
@@ -53,7 +60,6 @@ const { listKyc, getKycById, reviewKyc }  = require("../../controllers/kyc/kycAd
  *       401:
  *         description: Unauthorized
  */
-router.post("/submit", verifyToken, kycUpload, submitKyc);
 
 /**
  * @swagger
@@ -76,6 +82,10 @@ router.post("/submit", verifyToken, kycUpload, submitKyc);
  *       401:
  *         description: Unauthorized
  */
+const { kycSubmitLimiter } = require("../../middleware/rateLimiter");
+
+// ── User routes ───────────────────────────────────────────────────────────────
+router.post("/submit", kycSubmitLimiter, verifyToken, kycUpload, submitKyc);
 router.get("/status", verifyToken, getKycStatus);
 
 /**
@@ -182,7 +192,7 @@ router.get("/", verifyToken, allowTo("admin"), listKyc);
  *       403:
  *         description: Admin access required
  */
-router.get("/:kyc_id",   verifyToken, allowTo("admin"), getKycById);
+router.get("/:kyc_id", verifyToken, allowTo("admin"), getKycById);
 router.patch("/:kyc_id", verifyToken, allowTo("admin"), reviewKyc);
 
 module.exports = router;

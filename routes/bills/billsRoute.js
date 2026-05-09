@@ -6,6 +6,7 @@ const billsAdminController = require("../../controllers/bills/billsAdminControll
 const verifyToken = require("../../middleware/verifyToken");
 const verifyTransactionPin = require("../../middleware/verifyPin");
 const allowTo = require("../../middleware/allowTo");
+const { billPayLimiter } = require("../../middleware/rateLimiter");
 
 // ── User Routes ──────────────────────────────────────────────────────────────
 
@@ -105,7 +106,11 @@ router.get("/services", verifyToken, billsController.getAllServicesUser);
  *                   type: array
  *                   items: { $ref: '#/components/schemas/Service' }
  */
-router.get("/providers/:providerId/services", verifyToken, billsController.getServices);
+router.get(
+  "/providers/:providerId/services",
+  verifyToken,
+  billsController.getServices,
+);
 
 /**
  * @swagger
@@ -154,7 +159,13 @@ router.get("/providers/:providerId/services", verifyToken, billsController.getSe
  *       401:
  *         description: Unauthorized
  */
-router.post("/pay", verifyToken, verifyTransactionPin, billsController.payBill);
+router.post(
+  "/pay",
+  billPayLimiter,
+  verifyToken,
+  verifyTransactionPin,
+  billsController.payBill,
+);
 
 // ── Admin Routes ─────────────────────────────────────────────────────────────
 
@@ -172,7 +183,12 @@ router.post("/pay", verifyToken, verifyTransactionPin, billsController.payBill);
  *       403:
  *         description: Admin access required
  */
-router.get("/admin/history", verifyToken, allowTo("admin"), billsAdminController.getAllBillsAdmin);
+router.get(
+  "/admin/history",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.getAllBillsAdmin,
+);
 
 /**
  * @swagger
@@ -193,7 +209,12 @@ router.get("/admin/history", verifyToken, allowTo("admin"), billsAdminController
  *       403:
  *         description: Admin access required
  */
-router.get("/admin/history/:userId", verifyToken, allowTo("admin"), billsAdminController.getUserBillsAdmin);
+router.get(
+  "/admin/history/:userId",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.getUserBillsAdmin,
+);
 
 /**
  * @swagger
@@ -232,8 +253,18 @@ router.get("/admin/history/:userId", verifyToken, allowTo("admin"), billsAdminCo
  *       400:
  *         description: Name and code are required
  */
-router.get("/admin/providers",  verifyToken, allowTo("admin"), billsAdminController.getAllAdminProviders);
-router.post("/admin/providers", verifyToken, allowTo("admin"), billsAdminController.addProvider);
+router.get(
+  "/admin/providers",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.getAllAdminProviders,
+);
+router.post(
+  "/admin/providers",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.addProvider,
+);
 
 /**
  * @swagger
@@ -271,8 +302,18 @@ router.post("/admin/providers", verifyToken, allowTo("admin"), billsAdminControl
  *       200:
  *         description: Provider deleted
  */
-router.put("/admin/providers/:id",    verifyToken, allowTo("admin"), billsAdminController.editProvider);
-router.delete("/admin/providers/:id", verifyToken, allowTo("admin"), billsAdminController.removeProvider);
+router.put(
+  "/admin/providers/:id",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.editProvider,
+);
+router.delete(
+  "/admin/providers/:id",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.removeProvider,
+);
 
 /**
  * @swagger
@@ -311,8 +352,18 @@ router.delete("/admin/providers/:id", verifyToken, allowTo("admin"), billsAdminC
  *       400:
  *         description: provider_id and service_name are required
  */
-router.get("/admin/services",  verifyToken, allowTo("admin"), billsAdminController.getAllAdminServices);
-router.post("/admin/services", verifyToken, allowTo("admin"), billsAdminController.addService);
+router.get(
+  "/admin/services",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.getAllAdminServices,
+);
+router.post(
+  "/admin/services",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.addService,
+);
 
 /**
  * @swagger
@@ -350,7 +401,17 @@ router.post("/admin/services", verifyToken, allowTo("admin"), billsAdminControll
  *       200:
  *         description: Service deleted
  */
-router.put("/admin/services/:id",    verifyToken, allowTo("admin"), billsAdminController.editService);
-router.delete("/admin/services/:id", verifyToken, allowTo("admin"), billsAdminController.removeService);
+router.put(
+  "/admin/services/:id",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.editService,
+);
+router.delete(
+  "/admin/services/:id",
+  verifyToken,
+  allowTo("admin"),
+  billsAdminController.removeService,
+);
 
 module.exports = router;

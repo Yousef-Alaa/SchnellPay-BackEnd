@@ -4,7 +4,6 @@ const register = require("../../controllers/auth/register");
 const login = require("../../controllers/auth/login");
 const verifyEmail = require("../../controllers/auth/verifyEmail");
 const resendOtp = require("../../controllers/auth/resendOtp");
-const resendLimit = require("../../middleware/resendLimit");
 const changePassword = require("../../controllers/auth/changePassword");
 const resetPassword = require("../../controllers/auth/resetPassword");
 const forgetPassword = require("../../controllers/auth/forgetPassword");
@@ -12,9 +11,20 @@ const verifyToken = require("../../middleware/verifyToken");
 const verifyResetOTP = require("../../controllers/auth/verifyResetOtp");
 const refreshToken = require("../../controllers/auth/refreshToken");
 const logout       = require("../../controllers/auth/logout");
+const { 
+    loginLimiter, 
+    registerLimiter,
+    verifyEmailLimiter, 
+    forgetPasswordLimiter,
+    resetPasswordLimiter,
+    changePasswordLimiter, 
+    otpLimiter, 
+    verifyResetOtpLimiter
+} = require("../../middleware/resendLimit");
 
 const router = express.Router();
 
+<<<<<<< HEAD
 /**
  * @swagger
  * /api/v1/auth/register:
@@ -57,6 +67,16 @@ const router = express.Router();
  *         description: Rate limit — 3 requests per minute per IP
  */
 router.post("/register", resendLimit.registerLimiter, register);
+=======
+router.post("/login", loginLimiter, login);
+router.post("/register", registerLimiter, register);
+router.post("/verify-email", verifyEmailLimiter, verifyEmail);
+router.post("/forget-password", forgetPasswordLimiter, forgetPassword);
+router.post("/reset-password", resetPasswordLimiter, resetPassword);
+router.post("/change-password", changePasswordLimiter, verifyToken, changePassword);
+router.post("/resend-otp", otpLimiter, resendOtp);
+router.post("/verify-reset-otp", verifyResetOtpLimiter, verifyResetOTP);
+>>>>>>> 9bf1c8c315a2cb2d47809a078fcd5f7eb722c00c
 
 /**
  * @swagger

@@ -10,6 +10,7 @@ const {
     sendLoginOtp,
 } = require("../../controllers/auth/twoFaController");
 
+<<<<<<< HEAD
 /**
  * @swagger
  * /api/v1/auth/2fa/send-otp:
@@ -203,6 +204,20 @@ router.post("/regenerate-backup-codes", verifyToken, regenerateBackupCodes);
  *       401:
  *         description: Invalid MFA code
  */
+=======
+const {
+    mfaValidateLimiter,
+    mfaSendOtpLimiter,
+    mfaSetupLimiter,
+    mfaRegenerateLimiter,
+} = require("../../middleware/rateLimiter");
+
+router.post("/send-otp", mfaSendOtpLimiter, sendLoginOtp);
+router.post("/validate", mfaValidateLimiter, validateMfa);
+router.post("/setup", mfaSetupLimiter, verifyToken, setupMfa);
+router.post("/verify-setup", verifyToken, verifySetup);
+router.post("/regenerate-backup-codes", mfaRegenerateLimiter, verifyToken, regenerateBackupCodes);
+>>>>>>> 9bf1c8c315a2cb2d47809a078fcd5f7eb722c00c
 router.post("/disable", verifyToken, disableMfaHandler);
 
 module.exports = router;

@@ -1,9 +1,12 @@
 const verifyToken = require("../../middleware/verifyToken");
 const verifyTransactionPin = require("../../middleware/verifyPin");
-const { paymentMethodDeposit } = require("../../controllers/paymentMethods/depositMethodController");
+const {
+  paymentMethodDeposit,
+} = require("../../controllers/paymentMethods/depositMethodController");
 
 const express = require("express");
 const router = express.Router();
+const { walletDepositLimiter } = require("../../middleware/rateLimiter");
 
 /**
  * @swagger
@@ -56,6 +59,12 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post("/", verifyToken, verifyTransactionPin, paymentMethodDeposit);
+router.post(
+  "/",
+  walletDepositLimiter,
+  verifyToken,
+  verifyTransactionPin,
+  paymentMethodDeposit,
+);
 
 module.exports = router;
