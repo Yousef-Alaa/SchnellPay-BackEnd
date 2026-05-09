@@ -1,5 +1,6 @@
 const express = require("express");
-const twoFaRoutes = require("./twoFaRoutes");
+const router = express.Router();
+
 const register = require("../../controllers/auth/register");
 const login = require("../../controllers/auth/login");
 const verifyEmail = require("../../controllers/auth/verifyEmail");
@@ -7,31 +8,52 @@ const resendOtp = require("../../controllers/auth/resendOtp");
 const changePassword = require("../../controllers/auth/changePassword");
 const resetPassword = require("../../controllers/auth/resetPassword");
 const forgetPassword = require("../../controllers/auth/forgetPassword");
-const verifyToken = require("../../middleware/verifyToken");
 const verifyResetOTP = require("../../controllers/auth/verifyResetOtp");
 const refreshToken = require("../../controllers/auth/refreshToken");
-const logout       = require("../../controllers/auth/logout");
-const { 
-    loginLimiter, 
-    registerLimiter,
-    verifyEmailLimiter, 
-    forgetPasswordLimiter,
-    resetPasswordLimiter,
-    changePasswordLimiter, 
-    otpLimiter, 
-    verifyResetOtpLimiter
+const logout = require("../../controllers/auth/logout");
+
+const verifyToken = require("../../middleware/verifyToken");
+const twoFaRoutes = require("./twoFaRoutes");
+const {
+  loginLimiter,
+  registerLimiter,
+  verifyEmailLimiter,
+  forgetPasswordLimiter,
+  resetPasswordLimiter,
+  changePasswordLimiter,
+  otpLimiter,
+  verifyResetOtpLimiter,
 } = require("../../middleware/resendLimit");
 
-const router = express.Router();
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentication and Identity Management
+ */
 
-router.post("/login", loginLimiter, login);
+/**
+ * @swagger
+ * /api/v1/auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new user
+ *     description: Creates a new user account and sends a verification OTP to email.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       201:
+ *         description: User registered successfully. OTP sent.
+ *       400:
+ *         description: Validation error or email already exists
+ *       429:
+ *         description: Rate limit — Too many registration attempts
+ */
 router.post("/register", registerLimiter, register);
-router.post("/verify-email", verifyEmailLimiter, verifyEmail);
-router.post("/forget-password", forgetPasswordLimiter, forgetPassword);
-router.post("/reset-password", resetPasswordLimiter, resetPassword);
-router.post("/change-password", changePasswordLimiter, verifyToken, changePassword);
-router.post("/resend-otp", otpLimiter, resendOtp);
-router.post("/verify-reset-otp", verifyResetOtpLimiter, verifyResetOTP);
 
 /**
  * @swagger
@@ -41,8 +63,8 @@ router.post("/verify-reset-otp", verifyResetOtpLimiter, verifyResetOTP);
  *     summary: Login with email and password
  *     description: |
  *       Validates credentials and email verification status.
- *       - **No MFA**: Returns JWT access token (15 min prod / 1 h dev) and sets httpOnly `refresh_token` cookie.
- *       - **MFA enabled**: Returns `requires2FA: true` with a short-lived `mfa_token` (10 min, separate secret). Client must call `/auth/2fa/send-otp` then `/auth/2fa/validate`.
+ *       - **No MFA**: Returns JWT access token and sets httpOnly `refresh_token` cookie.
+ *       - **MFA enabled**: Returns `requires2FA: true` with a short-lived `mfa_token`.
  *     requestBody:
  *       required: true
  *       content:
@@ -63,7 +85,7 @@ router.post("/verify-reset-otp", verifyResetOtpLimiter, verifyResetOTP);
  *       429:
  *         description: Rate limit — 5 attempts per 15 min per IP
  */
-router.post("/login", resendLimit.loginLimiter, login);
+router.post("/login", loginLimiter, login);
 
 /**
  * @swagger
@@ -71,7 +93,7 @@ router.post("/login", resendLimit.loginLimiter, login);
  *   post:
  *     tags: [Auth]
  *     summary: Verify email with OTP
- *     description: Validates the SHA-256-hashed OTP sent at registration. On success activates the account, creates the user's wallet, and sends a welcome email.
+ *     description: Validates the SHA-256-hashed OTP. On success activates the account and creates the user's wallet.
  *     requestBody:
  *       required: true
  *       content:
@@ -80,23 +102,13 @@ router.post("/login", resendLimit.loginLimiter, login);
  *             $ref: '#/components/schemas/VerifyEmailRequest'
  *     responses:
  *       200:
- *         description: Email verified. Wallet created.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean, example: true }
- *                 message: { type: string, example: Email verified successfully }
- *                 user: { type: object, properties: { user_id: { type: integer } } }
+ *         description: Email verified successfully
  *       400:
- *         description: Invalid or expired OTP / missing fields
- *       404:
- *         description: User not found
+ *         description: Invalid or expired OTP
  *       429:
  *         description: Rate limit — 5 per 10 min per IP
  */
-router.post("/verify-email", resendLimit.verifyEmailLimiter, verifyEmail);
+router.post("/verify-email", verifyEmailLimiter, verifyEmail);
 
 /**
  * @swagger
@@ -116,7 +128,7 @@ router.post("/verify-email", resendLimit.verifyEmailLimiter, verifyEmail);
  *       429:
  *         description: Rate limit — 1 request per minute per IP
  */
-router.post("/resend-otp", resendLimit.otpLimiter, resendOtp);
+router.post("/resend-otp", otpLimiter, resendOtp);
 
 /**
  * @swagger
@@ -124,7 +136,7 @@ router.post("/resend-otp", resendLimit.otpLimiter, resendOtp);
  *   post:
  *     tags: [Auth]
  *     summary: Request a password reset OTP
- *     description: Generates a 6-digit OTP, SHA-256 hashes it, stores it with 10-min expiry, and emails it to the user.
+ *     description: Generates a 6-digit OTP and emails it to the user.
  *     requestBody:
  *       required: true
  *       content:
@@ -134,19 +146,12 @@ router.post("/resend-otp", resendLimit.otpLimiter, resendOtp);
  *     responses:
  *       200:
  *         description: OTP sent to email
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean, example: true }
- *                 message: { type: string, example: OTP sent to email }
  *       404:
  *         description: No user with that email
  *       429:
  *         description: Rate limit — 3 per 15 min per IP
  */
-router.post("/forget-password", resendLimit.forgetPasswordLimiter, forgetPassword);
+router.post("/forget-password", forgetPasswordLimiter, forgetPassword);
 
 /**
  * @swagger
@@ -154,7 +159,7 @@ router.post("/forget-password", resendLimit.forgetPasswordLimiter, forgetPasswor
  *   post:
  *     tags: [Auth]
  *     summary: Verify password reset OTP
- *     description: Validates OTP and marks `reset_otp_verified = 1`, which is required before calling reset-password.
+ *     description: Validates OTP before allowing the password reset.
  *     requestBody:
  *       required: true
  *       content:
@@ -169,7 +174,7 @@ router.post("/forget-password", resendLimit.forgetPasswordLimiter, forgetPasswor
  *       429:
  *         description: Rate limit — 5 per 10 min per IP
  */
-router.post("/verify-reset-otp", resendLimit.verifyResetOtpLimiter, verifyResetOTP);
+router.post("/verify-reset-otp", verifyResetOtpLimiter, verifyResetOTP);
 
 /**
  * @swagger
@@ -187,11 +192,11 @@ router.post("/verify-reset-otp", resendLimit.verifyResetOtpLimiter, verifyResetO
  *       200:
  *         description: Password reset successfully
  *       400:
- *         description: OTP not verified first / missing fields
+ *         description: OTP not verified first
  *       429:
  *         description: Rate limit — 3 per 10 min per IP
  */
-router.post("/reset-password", resendLimit.resetPasswordLimiter, resetPassword);
+router.post("/reset-password", resetPasswordLimiter, resetPassword);
 
 /**
  * @swagger
@@ -209,13 +214,18 @@ router.post("/reset-password", resendLimit.resetPasswordLimiter, resetPassword);
  *             $ref: '#/components/schemas/ChangePasswordRequest'
  *     responses:
  *       200:
- *         description: Password changed. Activity logged.
+ *         description: Password changed successfully
  *       401:
- *         description: Current password incorrect / invalid token
+ *         description: Unauthorized or current password incorrect
  *       429:
  *         description: Rate limit — 5 per 10 min per IP
  */
-router.post("/change-password", resendLimit.changePasswordLimiter, verifyToken, changePassword);
+router.post(
+  "/change-password",
+  verifyToken,
+  changePasswordLimiter,
+  changePassword,
+);
 
 /**
  * @swagger
@@ -223,19 +233,12 @@ router.post("/change-password", resendLimit.changePasswordLimiter, verifyToken, 
  *   post:
  *     tags: [Auth]
  *     summary: Refresh access token
- *     description: |
- *       Reads the `refresh_token` httpOnly cookie (set at login). Token format: `<userId>:<randomHex64>`.
- *       Validates the random part against bcrypt hashes in `REFRESH_TOKENS` table, slides expiry +24h (rolling window), and issues a new JWT access token.
- *       **No request body required.**
+ *     description: Reads `refresh_token` from httpOnly cookie and issues a new access token.
  *     responses:
  *       200:
- *         description: New access token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/RefreshTokenResponse'
+ *         description: New access token issued
  *       401:
- *         description: Missing cookie / invalid or expired refresh token
+ *         description: Missing or invalid refresh token
  */
 router.post("/refresh-token", refreshToken);
 
@@ -245,9 +248,6 @@ router.post("/refresh-token", refreshToken);
  *   post:
  *     tags: [Auth]
  *     summary: Logout and revoke refresh token
- *     description: |
- *       Revokes the current refresh token from the DB and clears the cookie.
- *       Pass `all_devices: true` to revoke ALL sessions for this user (all devices).
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -264,6 +264,7 @@ router.post("/refresh-token", refreshToken);
  */
 router.post("/logout", verifyToken, logout);
 
+// مسارات الـ 2FA
 router.use("/2fa", twoFaRoutes);
 
 module.exports = router;
