@@ -1,4 +1,5 @@
 const path = require("path");
+const cors = require("cors");
 
 const express = require("express");
 const cookieParser = require("cookie-parser");
@@ -13,17 +14,22 @@ const logger = require("../middleware/logger");
 const kycRoutes = require("../routes/kyc/kycRoutes");
 const paymentMethodsRouter = require("../routes/paymentMethods/paymentMethodsRoute");
 const depositMethodRouter = require("../routes/paymentMethods/depositMethodRoute");
-
 const activityLogRoutes = require("../routes/activityLog/activityLogRoutes");
 const notificationRoute = require("../routes/notification/notificationRoute");
+const docsRouter = require("../routes/docs/docsRoute");
 
 app.use(cookieParser());
 app.use(express.json());
+app.use(cors({
+  origin:   'http://localhost:5173',
+  credentials: true
+}));
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(logger);
 
+// ── API Routes ─────────────────────────────────────────────────────────────────
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/kyc", kycRoutes);
@@ -37,7 +43,12 @@ app.use("/api/v1/transactions", transactionsRoutes);
 app.use("/api/v1/payment-methods", paymentMethodsRouter);
 app.use("/api/v1/wallet/deposit", depositMethodRouter);
 
-//global middleware for wrong routing
+// ── Swagger API Documentation ──────────────────────────────────────────────────
+// Interactive UI: http://localhost:3000/api-docs
+// Raw JSON spec:  http://localhost:3000/api-docs/json
+app.use("/api-docs", docsRouter);
+
+// ── 404 handler ────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -45,7 +56,7 @@ app.use((req, res) => {
   });
 });
 
-//global error handling middleware
+// ── Global error handler ───────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   return res.status(err.statusCode || 500).json({
     success: false,
@@ -57,4 +68,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`API Docs: http://localhost:${PORT}/api-docs`);
 });
