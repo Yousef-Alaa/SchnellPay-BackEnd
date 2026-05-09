@@ -1,6 +1,7 @@
 const path = require("path");
 
 const express = require("express");
+const cors = require('cors');
 const cookieParser = require("cookie-parser");
 const app = express();
 
@@ -18,6 +19,15 @@ const depositMethodRouter = require("../routes/paymentMethods/depositMethodRoute
 
 const activityLogRoutes = require("../routes/activityLog/activityLogRoutes");
 const notificationRoute = require("../routes/notification/notificationRoute");
+
+const corsOptions = {
+  origin: ['http://localhost:8081'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+
 
 app.use(cookieParser());
 app.use(express.json());
