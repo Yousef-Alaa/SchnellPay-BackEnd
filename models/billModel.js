@@ -140,7 +140,7 @@ const deleteService = async (service_id) => {
     return true;
 };
 
-const getAllServices = async ({ limit, offset, search, activeOnly = false }) => {
+const getAllServices = async ({ limit = 50, offset = 0, search, activeOnly = false }) => {
     const pool = await poolPromise;
     let filter = activeOnly ? "WHERE s.is_active = 1 AND p.is_active = 1" : "WHERE 1=1";
     const request = pool.request();

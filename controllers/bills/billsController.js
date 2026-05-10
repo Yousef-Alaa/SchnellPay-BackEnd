@@ -97,8 +97,7 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
 
     if (!deducted) throw AppError.create("Insufficient balance", 400, false);
 
-    const reference_number =
-      "BIL-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+    const refNumber = "BIL-" + crypto.randomBytes(4).toString("hex").toUpperCase();
       
     const transaction_id = await createBillTransaction(
       transaction,
@@ -111,7 +110,6 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
       transaction,
       transaction_id,
       service_id,
-      service.provider_id,
       consumer_number,
     );
 
