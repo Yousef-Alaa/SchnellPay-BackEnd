@@ -32,15 +32,19 @@ const byUserId = (req, res) => {
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
-const make = ({ windowMinutes, max, keyGenerator }) =>
-    rateLimit({
-        windowMs:        windowMinutes * 60 * 1000,
+const make = ({ windowMinutes, max, keyGenerator }) => {
+    if (process.env.SKIP_RATE_LIMIT === "true") {
+        return (req, res, next) => next();
+    }
+    return rateLimit({
+        windowMs: windowMinutes * 60 * 1000,
         max,
         keyGenerator,
-        handler:         rateLimitHandler,
+        handler: rateLimitHandler,
         standardHeaders: true,
-        legacyHeaders:   false,
+        legacyHeaders: false,
     });
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 🔴 CRITICAL — Brute-force / abuse targets

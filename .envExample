@@ -1,5 +1,6 @@
 PORT=
 NODE_ENV = development # set to 'production' when deploy
+SKIP_RATE_LIMIT=true
 
 DB_PORT=
 DB_NAME=
