@@ -3,6 +3,7 @@ const rateLimit = require("express-rate-limit");
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: {
     status: 429,
     message: "Too many requests, please try again later.",
@@ -12,6 +13,7 @@ const globalLimiter = rateLimit({
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: {
     status: 429,
     message: "Too many login attempts, please try again after 15 minutes.",
@@ -21,6 +23,7 @@ const loginLimiter = rateLimit({
 const registerLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 3,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: {
     success: false,
     message: "Too many accounts created from this IP. Try again in an hour.",
@@ -30,12 +33,14 @@ const registerLimiter = rateLimit({
 const verifyEmailLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many OTP attempts, try again later",
 });
 
 const otpLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 1,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: {
     success: false,
     status: 429,
@@ -48,24 +53,28 @@ const otpLimiter = rateLimit({
 const forgetPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many password reset requests, try again later",
 });
 
 const verifyResetOtpLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many OTP attempts, try again later",
 });
 
 const resetPasswordLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 3,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many reset attempts, try again later",
 });
 
 const changePasswordLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many password change attempts, try again later",
 });
 
@@ -73,6 +82,7 @@ const changePasswordLimiter = rateLimit({
 const updateMeLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 10,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many profile updates, try again later",
 });
 
@@ -80,6 +90,7 @@ const updateMeLimiter = rateLimit({
 const deleteMeLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many delete attempts, try again later",
 });
 
@@ -87,6 +98,7 @@ const deleteMeLimiter = rateLimit({
 const adminGetUsersLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 60,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many requests, try again later",
 });
 
@@ -94,6 +106,7 @@ const adminGetUsersLimiter = rateLimit({
 const adminUpdateUserLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 15,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many update attempts, try again later",
 });
 
@@ -101,12 +114,14 @@ const adminUpdateUserLimiter = rateLimit({
 const adminDeleteUserLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: "Too many delete attempts, try again later",
 });
 
 const transactionLimiter = rateLimit({
   windowMs: 30 * 1000, // 30 seconds
   max: 1, // allow only 1 transaction every 30 seconds
+  skip: (req, res) => process.env.SKIP_RATE_LIMIT === "true",
   message: {
     success: false,
     message:
