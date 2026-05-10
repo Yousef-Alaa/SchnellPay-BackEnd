@@ -83,7 +83,7 @@ const findAll = async ({ limit, skip, search, sort, order }) => {
     .input("limit", sql.Int, limit)
     .input("skip", sql.Int, skip).query(`
       SELECT user_id, f_name, l_name, email, user_name, phone,
-             role, account_status, creation_date, country
+             role, account_status, is_verified, creation_date, country
       FROM [USERS]
       WHERE f_name LIKE @search OR l_name LIKE @search
          OR email LIKE @search OR user_name LIKE @search

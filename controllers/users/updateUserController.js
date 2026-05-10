@@ -5,7 +5,7 @@ const user = require("../../models/userModel");
 const logActivity = require("../../utils/logActivity");
 
 const updateUserController = asyncWrapper(async (req, res, next) => {
-  const id = req.user.id || req.params.id; // Use req.user.id for /updateMe and req.params.id for admin update
+  const id = req.params.id || req.user.id; // Use req.params.id for admin update and req.user.id for /updateMe
   const fields = req.body;
 
   if (!fields || Object.keys(fields).length === 0) {
