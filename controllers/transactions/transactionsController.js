@@ -31,7 +31,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
   ]);
 
   if (!sender) return next(AppError.create("Sender not found", 400, false));
-  if (sender.username === receiver_username)
+  if (sender.user_name === receiver_username)
     return next(AppError.create("Cannot transfer to yourself", 400, false));
   if (!receiver) return next(AppError.create("Receiver not found", 400, false));
 
@@ -57,7 +57,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
       receiver.user_id,
       amount,
       description,
-      refNumber,
+      reference_number,
     );
 
     await transaction.commit();
@@ -67,7 +67,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
     await createNotification(
       sender.user_id,
       "Money Sent",
-      `You successfully sent ${amount} EGP to ${receiver_username}. Ref: ${refNumber}`,
+      `You successfully sent ${amount} EGP to ${receiver_username}. Ref: ${reference_number}`,
       "TRANSACTION",
       sender.email,
     );
@@ -75,7 +75,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
     await createNotification(
       receiver.user_id,
       "Money Received",
-      `You received ${amount} EGP from ${sender.username}. Ref: ${refNumber}`,
+      `You received ${amount} EGP from ${sender.user_name}. Ref: ${reference_number}`,
       "TRANSACTION",
       receiver.email,
     );
@@ -83,7 +83,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
     res.json({
       success: true,
       message: "Transaction successful",
-      data: { reference: refNumber },
+      data: { reference: reference_number },
     });
   } catch (err) {
     if (transactionStarted) await transaction.rollback();

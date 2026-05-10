@@ -12,7 +12,7 @@ const searchUsers = async (q) => {
         .input("like_q",  sql.NVarChar, likeParam)
         .input("exact_q", sql.NVarChar, exactParam)
         .query(`
-        SELECT TOP 10 user_name, (f_name + ' ' + l_name) AS full_name
+        SELECT TOP 10 user_name, (f_name + ' ' + l_name) AS full_name, is_verified
         FROM [USERS]
         WHERE account_status = 'active'
             AND (
