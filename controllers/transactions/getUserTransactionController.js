@@ -11,6 +11,8 @@ const getUserTransactionService = asyncWrapper(async (req, res) => {
   const status = req.query.status || null;
   const from = req.query.from || null;
   const to = req.query.to || null;
+  const search = req.query.search || null;
+  
   const transactions = await transactionModel.findByUserId(userId, {
     limit,
     offset: skip,
@@ -18,12 +20,14 @@ const getUserTransactionService = asyncWrapper(async (req, res) => {
     status,
     from,
     to,
+    search,
   });
   const total = await transactionModel.countByUserId(userId, {
     type,
     status,
     from,
     to,
+    search,
   });
 
   res.status(200).json({

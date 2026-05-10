@@ -94,6 +94,7 @@ const getAllTransactions = async ({
   status,
   from,
   to,
+  search,
 }) => {
   let filter = "WHERE 1=1";
 
@@ -103,7 +104,11 @@ const getAllTransactions = async ({
     .input("limit", sql.Int, limit)
     .input("offset", sql.Int, offset);
 
-  if (type) {
+  if (type === "income") {
+    filter += ` AND t.transaction_type IN ('deposit', 'transfer', 'refund')`;
+  } else if (type === "expense") {
+    filter += ` AND t.transaction_type IN ('withdraw', 'bill', 'transfer', 'refund')`;
+  } else if (type) {
     filter += ` AND t.transaction_type = @type`;
     request.input("type", sql.NVarChar, type);
   }
@@ -112,6 +117,7 @@ const getAllTransactions = async ({
     filter += ` AND t.status = @status`;
     request.input("status", sql.NVarChar, status);
   }
+  
   if (from) {
     filter += ` AND t.created_at >= @from`;
     request.input("from", sql.DateTime, from);
@@ -119,6 +125,18 @@ const getAllTransactions = async ({
   if (to) {
     filter += ` AND t.created_at <= @to`;
     request.input("to", sql.DateTime, to);
+  }
+  if (search) {
+    filter += ` AND (
+      t.reference_number LIKE @search OR
+      t.description LIKE @search OR
+      s.f_name + ' ' + s.l_name LIKE @search OR
+      r.f_name + ' ' + r.l_name LIKE @search OR
+      TRY_CAST(t.sender_id AS VARCHAR) = @exactSearch OR
+      TRY_CAST(t.receiver_id AS VARCHAR) = @exactSearch
+    )`;
+    request.input("search", sql.NVarChar, `%${search}%`);
+    request.input("exactSearch", sql.VarChar, search);
   }
 
   const result = await request.query(`
@@ -135,53 +153,20 @@ const getAllTransactions = async ({
 
   return result.recordset;
 };
-const countAll = async ({ type, status, from, to }) => {
+
+
+
+const countAll = async ({ type, status, from, to, search }) => {
   let filter = "WHERE 1=1";
 
   const pool = await poolPromise;
   const request = pool.request();
 
-  if (type) {
-    filter += ` AND transaction_type = @type`;
-    request.input("type", sql.NVarChar, type);
-  }
-
-  if (status) {
-    filter += ` AND status = @status`;
-    request.input("status", sql.NVarChar, status);
-  }
-
-  if (from) {
-    filter += ` AND created_at >= @from`;
-    request.input("from", sql.DateTime, from);
-  }
-
-  if (to) {
-    filter += ` AND created_at <= @to`;
-    request.input("to", sql.DateTime, to);
-  }
-
-  const result = await request.query(`
-    SELECT COUNT(*) AS total FROM [TRANSACTIONS] ${filter}
-  `);
-
-  return result.recordset[0].total;
-};
-
-const findByUserId = async (
-  userId,
-  { limit, offset, type, status, from, to },
-) => {
-  let filter = `WHERE (t.sender_id = @userId OR t.receiver_id = @userId)`;
-
-  const pool = await poolPromise;
-  const request = pool
-    .request()
-    .input("userId", sql.Int, userId)
-    .input("limit", sql.Int, limit)
-    .input("offset", sql.Int, offset);
-
-  if (type) {
+  if (type === "income") {
+    filter += ` AND t.transaction_type IN ('deposit', 'transfer', 'refund')`;
+  } else if (type === "expense") {
+    filter += ` AND t.transaction_type IN ('withdraw', 'bill', 'transfer', 'refund')`;
+  } else if (type) {
     filter += ` AND t.transaction_type = @type`;
     request.input("type", sql.NVarChar, type);
   }
@@ -199,6 +184,77 @@ const findByUserId = async (
   if (to) {
     filter += ` AND t.created_at <= @to`;
     request.input("to", sql.DateTime, to);
+  }
+
+  if (search) {
+    filter += ` AND (
+      t.reference_number LIKE @search OR
+      t.description LIKE @search OR
+      s.f_name + ' ' + s.l_name LIKE @search OR
+      r.f_name + ' ' + r.l_name LIKE @search OR
+      TRY_CAST(t.sender_id AS VARCHAR) = @exactSearch OR
+      TRY_CAST(t.receiver_id AS VARCHAR) = @exactSearch
+    )`;
+    request.input("search", sql.NVarChar, `%${search}%`);
+    request.input("exactSearch", sql.VarChar, search);
+  }
+
+  const result = await request.query(`
+    SELECT COUNT(*) AS total 
+    FROM [TRANSACTIONS] t
+    LEFT JOIN [USERS] s ON t.sender_id = s.user_id
+    LEFT JOIN [USERS] r ON t.receiver_id = r.user_id
+    ${filter}
+  `);
+
+  return result.recordset[0].total;
+};
+
+const findByUserId = async (
+  userId,
+  { limit, offset, type, status, from, to, search },
+) => {
+  let filter = `WHERE (t.sender_id = @userId OR t.receiver_id = @userId)`;
+
+  const pool = await poolPromise;
+  const request = pool
+    .request()
+    .input("userId", sql.Int, userId)
+    .input("limit", sql.Int, limit)
+    .input("offset", sql.Int, offset);
+
+  if (type === "income") {
+    filter += ` AND ((t.transaction_type = 'deposit') OR (t.transaction_type = 'transfer' AND t.receiver_id = @userId))`;
+  } else if (type === "expense") {
+    filter += ` AND ((t.transaction_type IN ('withdraw', 'bill')) OR (t.transaction_type = 'transfer' AND t.sender_id = @userId))`;
+  } else if (type) {
+    filter += ` AND t.transaction_type = @type`;
+    request.input("type", sql.NVarChar, type);
+  }
+
+  if (status) {
+    filter += ` AND t.status = @status`;
+    request.input("status", sql.NVarChar, status);
+  }
+
+  if (from) {
+    filter += ` AND t.created_at >= @from`;
+    request.input("from", sql.DateTime, from);
+  }
+
+  if (to) {
+    filter += ` AND t.created_at <= @to`;
+    request.input("to", sql.DateTime, to);
+  }
+
+  if (search) {
+    filter += ` AND (
+      t.reference_number LIKE @search OR
+      t.description LIKE @search OR
+      s.f_name + ' ' + s.l_name LIKE @search OR
+      r.f_name + ' ' + r.l_name LIKE @search
+    )`;
+    request.input("search", sql.NVarChar, `%${search}%`);
   }
 
   const result = await request.query(`
@@ -216,34 +272,52 @@ const findByUserId = async (
   return result.recordset;
 };
 
-const countByUserId = async (userId, { type, status, from, to }) => {
-  let filter = `WHERE (sender_id = @userId OR receiver_id = @userId)`;
+const countByUserId = async (userId, { type, status, from, to, search }) => {
+  let filter = `WHERE (t.sender_id = @userId OR t.receiver_id = @userId)`;
 
   const pool = await poolPromise;
   const request = pool.request().input("userId", sql.Int, userId);
 
-  if (type) {
-    filter += ` AND transaction_type = @type`;
+  if (type === "income") {
+    filter += ` AND ((t.transaction_type = 'deposit') OR (t.transaction_type = 'transfer' AND t.receiver_id = @userId))`;
+  } else if (type === "expense") {
+    filter += ` AND ((t.transaction_type IN ('withdraw', 'bill')) OR (t.transaction_type = 'transfer' AND t.sender_id = @userId))`;
+  } else if (type) {
+    filter += ` AND t.transaction_type = @type`;
     request.input("type", sql.NVarChar, type);
   }
 
   if (status) {
-    filter += ` AND status = @status`;
+    filter += ` AND t.status = @status`;
     request.input("status", sql.NVarChar, status);
   }
 
   if (from) {
-    filter += ` AND created_at >= @from`;
+    filter += ` AND t.created_at >= @from`;
     request.input("from", sql.DateTime, from);
   }
 
   if (to) {
-    filter += ` AND created_at <= @to`;
+    filter += ` AND t.created_at <= @to`;
     request.input("to", sql.DateTime, to);
   }
 
+  if (search) {
+    filter += ` AND (
+      t.reference_number LIKE @search OR
+      t.description LIKE @search OR
+      s.f_name + ' ' + s.l_name LIKE @search OR
+      r.f_name + ' ' + r.l_name LIKE @search
+    )`;
+    request.input("search", sql.NVarChar, `%${search}%`);
+  }
+
   const result = await request.query(`
-    SELECT COUNT(*) AS total FROM [TRANSACTIONS] ${filter}
+    SELECT COUNT(*) AS total 
+    FROM [TRANSACTIONS] t
+    LEFT JOIN [USERS] s ON t.sender_id = s.user_id
+    LEFT JOIN [USERS] r ON t.receiver_id = r.user_id
+    ${filter}
   `);
 
   return result.recordset[0].total;
@@ -267,6 +341,22 @@ const getPinByUserId = async (userId) => {
   return result.recordset[0].transaction_Pin;
 };
 
+const getTransactionById = async (id) => {
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input("id", sql.Int, id)
+    .query("SELECT * FROM TRANSACTIONS WHERE transaction_id = @id");
+  return result.recordset[0];
+};
+
+const updateTransactionStatus = async (id, status) => {
+  const pool = await poolPromise;
+  await pool.request()
+    .input("id", sql.Int, id)
+    .input("status", sql.VarChar, status)
+    .query("UPDATE TRANSACTIONS SET status = @status WHERE transaction_id = @id");
+};
+
 module.exports = {
   createBillTransaction,
   createTransaction,
@@ -276,4 +366,6 @@ module.exports = {
   getAllTransactions,
   countAll,
   getPinByUserId,
+  getTransactionById,
+  updateTransactionStatus,
 };

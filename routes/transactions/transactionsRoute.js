@@ -12,6 +12,9 @@ const verifyTransactionPin = require("../../middleware/verifyPin");
 router.get("/user", verifytoken, getUserTransactionController);
 
 router.get("/", verifytoken, allowTo("admin"), getAllTransactions);
+router.patch("/:id/status", verifytoken, allowTo("admin"), transactionsController.updateStatus);
+router.post("/:id/refund", verifytoken, allowTo("admin"), transactionsController.refundTransaction);
+
 router.post(
   "/send",
   verifytoken,

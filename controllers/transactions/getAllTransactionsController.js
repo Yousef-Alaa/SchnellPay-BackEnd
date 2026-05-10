@@ -9,6 +9,8 @@ const getAllTransactionController = asyncyWrapper(async (req, res) => {
   const status = req.query.status || null;
   const from = req.query.from || null;
   const to = req.query.to || null;
+  const search = req.query.search || null;
+  
   const transactions = await transactionModel.getAllTransactions({
     limit,
     offset: skip,
@@ -16,8 +18,9 @@ const getAllTransactionController = asyncyWrapper(async (req, res) => {
     status,
     from,
     to,
+    search,
   });
-  const total = await transactionModel.countAll({ type, status, from, to });
+  const total = await transactionModel.countAll({ type, status, from, to, search });
   res.status(200).json({
     success: true,
     results: transactions.length,

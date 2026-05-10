@@ -56,8 +56,8 @@ const paymentMethodDeposit = asyncWrapper(async (req, res, next) => {
 
   const pool = await poolPromise;
   const dbTx = new sql.Transaction(pool);
-  const reference = `DEP-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
-
+  const reference_number =
+    "DEP-" + crypto.randomBytes(4).toString("hex").toUpperCase();
   await dbTx.begin();
   try {
     const rowsUpdated = await addBalance(dbTx, userId, parsedAmount);

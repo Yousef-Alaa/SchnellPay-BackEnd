@@ -6,11 +6,14 @@ const {
   getProviders,
   getServicesByProvider,
   findService,
-  getAllServices
+  getAllServices,
 } = require("../../models/billModel");
 const { deductBalance } = require("../../models/walletModel");
 const { createBillTransaction } = require("../../models/transactionModel");
-const { createBillDetails, getBillsByUserId } = require("../../models/billDatailsModel");
+const {
+  createBillDetails,
+  getBillsByUserId,
+} = require("../../models/billDatailsModel");
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const AppError = require("../../utils/appError");
 const { createNotification } = require("../../utils/notificationHelper");
@@ -70,14 +73,14 @@ exports.getServices = asyncWrapper(async (req, res, next) => {
 // @route POST /api/v1/bills/pay
 // @access Private
 exports.payBill = asyncWrapper(async (req, res, next) => {
-  
   const { service_id, amount, consumer_number } = req.body;
-  const userId = req.user.id; 
+  const userId = req.user.id;
 
-  if (!amount || amount <= 0) return next(AppError.create("Invalid amount", 400, false));
+  if (!amount || amount <= 0)
+    return next(AppError.create("Invalid amount", 400, false));
 
   const service = await findService(service_id);
-  
+
   if (!service) return next(AppError.create("Service not found", 404, false));
 
   const totalAmount = amount + service.fee;
@@ -87,17 +90,16 @@ exports.payBill = asyncWrapper(async (req, res, next) => {
   let transactionStarted = false;
 
   try {
-
     await transaction.begin();
     transactionStarted = true;
 
     const deducted = await deductBalance(transaction, userId, totalAmount);
 
     if (!deducted) throw AppError.create("Insufficient balance", 400, false);
-    
 
-    const refNumber = crypto.randomBytes(8).toString("hex");
-
+    const reference_number =
+      "BIL-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+      
     const transaction_id = await createBillTransaction(
       transaction,
       userId,
