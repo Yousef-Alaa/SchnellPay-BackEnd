@@ -23,7 +23,8 @@ const createTransaction = async (
             amount,
             status,
             description,
-            reference_number
+            reference_number,
+            created_at
         )
         VALUES (
             'transfer',
@@ -32,7 +33,8 @@ const createTransaction = async (
             @amount,
             'completed',
             @desc,
-            @ref
+            @ref,
+            GETUTCDATE()
         )
         `);
 };
@@ -48,9 +50,9 @@ const createBillTransaction = async (
     .input("amount", sql.Decimal(15, 2), amount)
     .input("ref", sql.VarChar, reference).query(`
         INSERT INTO TRANSACTIONS 
-        (transaction_type, sender_id, amount, status, description, reference_number)
+        (transaction_type, sender_id, amount, status, description, reference_number, created_at)
         OUTPUT INSERTED.transaction_id
-        VALUES ('bill', @user_id, @amount, 'completed', 'Bill Payment', @ref)
+        VALUES ('bill', @user_id, @amount, 'completed', 'Bill Payment', @ref, GETUTCDATE())
         `);
 
   return result.recordset[0].transaction_id;
@@ -80,9 +82,9 @@ const createAtmTransaction = async (
     .input("sender_id", sql.Int, isDeposit ? null : userId)
     .input("receiver_id", sql.Int, isDeposit ? userId : null).query(`
             INSERT INTO TRANSACTIONS
-                (transaction_type, sender_id, receiver_id, amount, status, description, reference_number)
+                (transaction_type, sender_id, receiver_id, amount, status, description, reference_number, created_at)
             VALUES
-                (@type, @sender_id, @receiver_id, @amount, 'completed', @desc, @ref)
+                (@type, @sender_id, @receiver_id, @amount, 'completed', @desc, @ref, GETUTCDATE())
         `);
 };
 
@@ -142,7 +144,9 @@ const getAllTransactions = async ({
   const result = await request.query(`
     SELECT t.*, 
            s.f_name + ' ' + s.l_name AS sender_name, 
-           r.f_name + ' ' + r.l_name AS receiver_name
+           s.user_name AS sender_username,
+           r.f_name + ' ' + r.l_name AS receiver_name,
+           r.user_name AS receiver_username
     FROM [TRANSACTIONS] t
     LEFT JOIN [USERS] s ON t.sender_id = s.user_id
     LEFT JOIN [USERS] r ON t.receiver_id = r.user_id
@@ -260,7 +264,9 @@ const findByUserId = async (
   const result = await request.query(`
     SELECT t.*,
            s.f_name + ' ' + s.l_name AS sender_name,
-           r.f_name + ' ' + r.l_name AS receiver_name
+           s.user_name AS sender_username,
+           r.f_name + ' ' + r.l_name AS receiver_name,
+           r.user_name AS receiver_username
     FROM [TRANSACTIONS] t
     LEFT JOIN [USERS] s ON t.sender_id = s.user_id
     LEFT JOIN [USERS] r ON t.receiver_id = r.user_id
