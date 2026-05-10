@@ -1,5 +1,6 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const userModel = require("../../models/userModel");
+const walletModel = require("../../models/walletModel");
 const appError = require("../../utils/appError");
 
 const getSingleUserController = asyncWrapper(async (req, res, next) => {
@@ -11,6 +12,9 @@ const getSingleUserController = asyncWrapper(async (req, res, next) => {
     const error = appError.create("User not found", 404);
     return next(error);
   }
+
+  // Fetch wallet data
+  const wallet = await walletModel.getWalletByUserId(id);
 
   // Safe user object
   const safeUser = {
@@ -25,6 +29,8 @@ const getSingleUserController = asyncWrapper(async (req, res, next) => {
     is_verified: user.is_verified,
     mfa_enabled: user.mfa_enabled,
     creation_date: user.creation_date,
+    balance: wallet ? wallet.balance : 0,
+    currency: wallet ? wallet.currency : "EGP",
   };
 
   res.status(200).json({
