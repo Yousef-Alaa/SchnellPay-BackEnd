@@ -19,6 +19,7 @@ const depositMethodRouter = require("../routes/paymentMethods/depositMethodRoute
 
 const activityLogRoutes = require("../routes/activityLog/activityLogRoutes");
 const notificationRoute = require("../routes/notification/notificationRoute");
+const adminRoutes = require("../routes/admin/adminRoute");
 
 const corsOptions = {
   origin: ['http://localhost:8081'],
@@ -43,6 +44,7 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/kyc", kycRoutes);
 app.use("/api/v1/activity-log", activityLogRoutes);
 app.use("/api/v1/notifications", notificationRoute);
+app.use("/api/v1/admin", adminRoutes);
 
 app.use("/api/v1/atm", atmRoutes);
 app.use("/api/v1/bills", billsRoutes);
