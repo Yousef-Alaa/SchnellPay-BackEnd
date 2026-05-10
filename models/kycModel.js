@@ -100,6 +100,9 @@ const findAll = async ({ status, limit, offset }) => {
                 k.document_type,
                 k.verified_at,
                 k.rejection_reason,
+                k.front_image,
+                k.back_image,
+                k.selfie_image,
                 u.user_id,
                 u.f_name,
                 u.l_name,
@@ -199,6 +202,20 @@ const rejectKyc = async (kycId, adminId, rejectionReason) => {
         `);
 };
 
+/**
+ * Get global summary statistics for all KYC submissions.
+ */
+const getSummaryStats = async () => {
+    const pool = await poolPromise;
+    const result = await pool.query(`
+        SELECT 
+            (SELECT COUNT(*) FROM KYC_DOCUMENTS WHERE KYC_status = 'pending') as pending,
+            (SELECT COUNT(*) FROM KYC_DOCUMENTS WHERE KYC_status = 'approved') as approved,
+            (SELECT COUNT(*) FROM KYC_DOCUMENTS WHERE KYC_status = 'rejected') as rejected
+    `);
+    return result.recordset[0];
+};
+
 module.exports = {
     findKycByUserId,
     createKyc,
@@ -208,4 +225,5 @@ module.exports = {
     findById,
     approveKyc,
     rejectKyc,
+    getSummaryStats,
 };

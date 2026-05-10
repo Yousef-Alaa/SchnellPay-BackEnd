@@ -6,6 +6,7 @@ const {
   findById,
   approveKyc,
   rejectKyc,
+  getSummaryStats,
 } = require("../../models/kycModel");
 const { createNotification } = require("../../utils/notificationHelper");
 
@@ -165,4 +166,12 @@ const reviewKyc = asyncWrapper(async (req, res, next) => {
   }
 });
 
-module.exports = { listKyc, getKycById, reviewKyc };
+const getKycStats = asyncWrapper(async (req, res, next) => {
+  const stats = await getSummaryStats();
+  return res.status(200).json({
+    status: "success",
+    data: stats,
+  });
+});
+
+module.exports = { listKyc, getKycById, reviewKyc, getKycStats };
