@@ -90,6 +90,30 @@ const createAtmTransaction = async (
         `);
 };
 
+const createDepositTransaction = async (
+  transaction,
+  userId,
+  amount,
+  type,
+  reference,
+) => {
+  const isDeposit = type === "deposit";
+
+  await new sql.Request(transaction)
+    .input("user_id", sql.Int, userId)
+    .input("amount", sql.Decimal(15, 2), amount)
+    .input("type", sql.VarChar, type)
+    .input("desc", sql.VarChar, isDeposit ? "Online Deposit" : "Online Withdrawal")
+    .input("ref", sql.VarChar, reference)
+    .input("sender_id", sql.Int, isDeposit ? null : userId)
+    .input("receiver_id", sql.Int, isDeposit ? userId : null).query(`
+            INSERT INTO TRANSACTIONS
+                (transaction_type, sender_id, receiver_id, amount, status, description, reference_number, created_at)
+            VALUES
+                (@type, @sender_id, @receiver_id, @amount, 'completed', @desc, @ref, GETUTCDATE())
+        `);
+};
+
 // Get transactions with optional filters for type and status, and pagination for admin dashboard
 const getAllTransactions = async ({
   limit,
@@ -230,7 +254,7 @@ const findByUserId = async (
     .input("offset", sql.Int, offset);
 
   if (type === "income") {
-    filter += ` AND ((t.transaction_type = 'deposit') OR (t.transaction_type = 'transfer' AND t.receiver_id = @userId))`;
+    filter += ` AND ((t.transaction_type IN ('deposit', 'refund')) OR (t.transaction_type = 'transfer' AND t.receiver_id = @userId))`;
   } else if (type === "expense") {
     filter += ` AND ((t.transaction_type IN ('withdraw', 'bill')) OR (t.transaction_type = 'transfer' AND t.sender_id = @userId))`;
   } else if (type) {
@@ -287,7 +311,7 @@ const countByUserId = async (userId, { type, status, from, to, search }) => {
   const request = pool.request().input("userId", sql.Int, userId);
 
   if (type === "income") {
-    filter += ` AND ((t.transaction_type = 'deposit') OR (t.transaction_type = 'transfer' AND t.receiver_id = @userId))`;
+    filter += ` AND ((t.transaction_type IN ('deposit', 'refund')) OR (t.transaction_type = 'transfer' AND t.receiver_id = @userId))`;
   } else if (type === "expense") {
     filter += ` AND ((t.transaction_type IN ('withdraw', 'bill')) OR (t.transaction_type = 'transfer' AND t.sender_id = @userId))`;
   } else if (type) {
@@ -378,6 +402,7 @@ module.exports = {
   createBillTransaction,
   createTransaction,
   createAtmTransaction,
+  createDepositTransaction,
   findByUserId,
   countByUserId,
   getAllTransactions,

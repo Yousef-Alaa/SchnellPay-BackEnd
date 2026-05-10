@@ -10,7 +10,7 @@ const {
   getPaymentMethodsByUserId,
 } = require("../../models/paymentMethodsModel");
 const { addBalance, getWalletByUserId } = require("../../models/walletModel");
-const { createAtmTransaction } = require("../../models/transactionModel");
+const { createDepositTransaction } = require("../../models/transactionModel");
 const { createNotification } = require("../../utils/notificationHelper");
 
 const paymentMethodDeposit = asyncWrapper(async (req, res, next) => {
@@ -73,12 +73,12 @@ const paymentMethodDeposit = asyncWrapper(async (req, res, next) => {
       );
     }
 
-    await createAtmTransaction(
+    await createDepositTransaction(
       dbTx,
       userId,
       parsedAmount,
       "deposit",
-      reference,
+      reference_number,
     );
 
     await dbTx.commit();
@@ -91,7 +91,7 @@ const paymentMethodDeposit = asyncWrapper(async (req, res, next) => {
   createNotification(
     userId,
     "Deposit Successful",
-    `Success! EGP ${parsedAmount} has been added to your wallet. Reference: ${reference}. Your new balance is ${updatedWallet.balance} ${updatedWallet.currency}.`,
+    `Success! EGP ${parsedAmount} has been added to your wallet. Reference: ${reference_number}. Your new balance is ${updatedWallet.balance} ${updatedWallet.currency}.`,
     "DEPOSIT from " + finalMethodId,
     req.user.email,
   );
@@ -100,7 +100,7 @@ const paymentMethodDeposit = asyncWrapper(async (req, res, next) => {
     status: "success",
     message: "Deposit successful.",
     data: {
-      reference,
+      reference: reference_number,
       amount: parsedAmount,
       currency: updatedWallet.currency,
       new_balance: updatedWallet.balance,
