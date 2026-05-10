@@ -12,8 +12,8 @@ const insertLog = async (userId, action, description, ipAddress, device) => {
         .input("ip_address",  sql.NVarChar, ipAddress   || null)
         .input("device",      sql.NVarChar, device      || null)
         .query(`
-            INSERT INTO ACTIVITY_LOG (user_id, action, description, ip_address, device)
-            VALUES (@user_id, @action, @description, @ip_address, @device)
+            INSERT INTO ACTIVITY_LOG (user_id, action, description, ip_address, device, created_at)
+            VALUES (@user_id, @action, @description, @ip_address, @device, GETUTCDATE())
         `);
 };
 
