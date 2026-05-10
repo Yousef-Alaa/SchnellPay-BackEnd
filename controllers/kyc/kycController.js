@@ -14,7 +14,7 @@ const {
 const submitKyc = asyncWrapper(async (req, res, next) => {
     
     const { document_type } = req.body;
-    const userId = req.user.user_id;
+    const userId = req.user.id;
 
     const allowedTypes = ["national_id", "passport", "driving_license"];
     if (!document_type || !allowedTypes.includes(document_type)) {
