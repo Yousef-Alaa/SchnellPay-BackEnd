@@ -8,7 +8,7 @@ const AppError = require("../utils/appError");
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         // Each user gets their own folder: /uploads/kyc/:user_id/
-        const dir = path.join(__dirname, `../uploads/kyc/${req.user.user_id}`);
+        const dir = path.join(__dirname, `../uploads/kyc/${req.user.id}`);
 
         // Create the directory if it doesn't exist yet
         fs.mkdirSync(dir, { recursive: true });

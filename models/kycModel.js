@@ -174,7 +174,7 @@ const approveKyc = async (kycId, adminId) => {
         .query(`
             UPDATE KYC_DOCUMENTS
             SET KYC_status       = 'approved',
-                verified_at      = GETDATE(),
+                verified_at      = GETUTCDATE(),
                 reviewed_by      = @admin_id,
                 rejection_reason = NULL
             WHERE KYC_ID = @kyc_id

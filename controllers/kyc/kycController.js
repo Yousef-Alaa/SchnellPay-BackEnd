@@ -26,6 +26,7 @@ const submitKyc = asyncWrapper(async (req, res, next) => {
             )
         );
     }
+    
 
     const files = req.files;
     if (
@@ -91,7 +92,7 @@ const submitKyc = asyncWrapper(async (req, res, next) => {
 // @access Private
 const getKycStatus = asyncWrapper(async (req, res, next) => {
     
-    const userId = req.user.user_id;
+    const userId = req.user.id;
 
     const kyc = await findKycByUserId(userId);
 
