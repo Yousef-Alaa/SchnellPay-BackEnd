@@ -9,10 +9,24 @@ const getUserNotificationsController = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
 
-  const notifications = await Notification.list(userId);
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  const [notifications, total] = await Promise.all([
+    Notification.list(userId, limit, offset),
+    Notification.count(userId)
+  ]);
+
   res.status(200).json({
     status: "success",
     data: notifications.recordset,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
   });
 });
 
