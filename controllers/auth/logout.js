@@ -17,7 +17,7 @@ const logout = asyncWrapper(async (req, res, next) => {
 
     // Revoke all devices
     if (all_devices === true) {
-        await revokeAllUserTokens(req.user.user_id);
+        await revokeAllUserTokens(req.user.id);
         res.clearCookie("refresh_token");
 
         return res.status(200).json({

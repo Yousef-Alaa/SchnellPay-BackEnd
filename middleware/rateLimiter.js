@@ -26,7 +26,7 @@ const byIp = (req, res) => rateLimit.ipKeyGenerator(req, res);
  */
 const byUserId = (req, res) => {
     return req.user?.user_id
-        ? `user_${req.user.user_id}`
+        ? `user_${req.user.id}`
         : rateLimit.ipKeyGenerator(req, res);
 };
 

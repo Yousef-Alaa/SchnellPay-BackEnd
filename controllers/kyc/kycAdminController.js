@@ -101,7 +101,7 @@ const reviewKyc = asyncWrapper(async (req, res, next) => {
   const { kyc_id } = req.params;
   const { action, rejection_reason } = req.body;
 
-  const adminId = req.user.user_id;
+  const adminId = req.user.id;
 
   if (!action || !["approve", "reject"].includes(action))
     return next(

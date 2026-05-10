@@ -27,7 +27,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
     return next(AppError.create("Invalid amount", 400, false));
 
   const [sender, receiver] = await Promise.all([
-    findById(req.user.user_id),
+    findById(req.user.id),
     findByUsername(receiver_username),
   ]);
 
