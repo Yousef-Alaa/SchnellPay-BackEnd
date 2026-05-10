@@ -181,11 +181,13 @@ exports.refundTransaction = asyncWrapper(async (req, res, next) => {
 
     // Notify the original sender about the refund
     if (originalSender) {
+      const senderUser = await findById(originalSender);
       createNotification(
         originalSender,
         "Refund Received",
         `A refund of ${amount} EGP has been credited back to your wallet for transaction ${txn.reference_number || txn.transaction_id}. Ref: ${refNumber}`,
-        "TRANSACTION"
+        "TRANSACTION",
+        senderUser?.email
       );
     }
 
