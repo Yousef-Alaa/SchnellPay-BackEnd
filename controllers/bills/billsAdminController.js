@@ -5,10 +5,12 @@ const {
   updateProvider,
   deleteProvider,
   getProviders,
+  countProviders,
   createService,
   updateService,
   deleteService,
   getAllServices,
+  countServices,
 } = require("../../models/billModel");
 const { getAllBills, getBillsByUserId } = require("../../models/billDatailsModel");
 
@@ -45,6 +47,11 @@ exports.addProvider = asyncWrapper(async (req, res, next) => {
     return next(AppError.create("Name and code are required", 400, false));
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!contact_email || !emailRegex.test(contact_email)) {
+    return next(AppError.create("A valid contact email is required", 400, false));
+  }
+
   const provider = await createProvider(name, code, contact_email, true);
 
   res.status(201).json({
@@ -62,8 +69,17 @@ exports.editProvider = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
   const { name, code, contact_email, is_active } = req.body;
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (contact_email && !emailRegex.test(contact_email)) {
+    return next(AppError.create("Invalid contact email format", 400));
+  }
+
 
   const provider = await updateProvider(id, name, code, contact_email, is_active);
+  
+  if (!provider) {
+    return next(AppError.create("Provider not found", 404));
+  }
 
   res.json({
     success: true,
@@ -91,11 +107,20 @@ exports.removeProvider = asyncWrapper(async (req, res, next) => {
 // @route GET /api/v1/bills/admin/providers
 // @access Private (Admin)
 exports.getAllAdminProviders = asyncWrapper(async (req, res, next) => {
-  const providers = await getProviders(false); // false means get all, not just active
+  const { page = 1, limit = 10, search = "" } = req.query;
+  const offset = (page - 1) * limit;
+
+  const [providers, total] = await Promise.all([
+    getProviders({ limit: parseInt(limit), offset, search, activeOnly: false }),
+    countProviders({ search, activeOnly: false })
+  ]);
 
   res.json({
     success: true,
     data: providers,
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit)
   });
 });
 
@@ -153,10 +178,19 @@ exports.removeService = asyncWrapper(async (req, res, next) => {
 // @route GET /api/v1/bills/admin/services
 // @access Private (Admin)
 exports.getAllAdminServices = asyncWrapper(async (req, res, next) => {
-  const services = await getAllServices(false); // false means get all
+  const { page = 1, limit = 10, search = "" } = req.query;
+  const offset = (page - 1) * limit;
+
+  const [services, total] = await Promise.all([
+    getAllServices({ limit: parseInt(limit), offset, search, activeOnly: false }),
+    countServices({ search, activeOnly: false })
+  ]);
 
   res.json({
     success: true,
     data: services,
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit)
   });
 });

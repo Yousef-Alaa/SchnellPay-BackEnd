@@ -46,14 +46,43 @@ const deleteProvider = async (provider_id) => {
     return true;
 };
 
-const getProviders = async (activeOnly = false) => {
+const getProviders = async ({ limit, offset, search, activeOnly = false }) => {
     const pool = await poolPromise;
-    let query = `SELECT * FROM BILLS_PROVIDERS`;
-    if (activeOnly) {
-        query += ` WHERE is_active = 1`;
+    let filter = activeOnly ? "WHERE is_active = 1" : "WHERE 1=1";
+    const request = pool.request();
+
+    if (search) {
+        filter += ` AND (provider_name LIKE @search OR provider_code LIKE @search)`;
+        request.input("search", sql.NVarChar, `%${search}%`);
     }
-    const result = await pool.request().query(query);
+
+    const query = `
+        SELECT * FROM BILLS_PROVIDERS
+        ${filter}
+        ORDER BY provider_id DESC
+        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+    `;
+
+    const result = await request
+        .input("limit", sql.Int, limit)
+        .input("offset", sql.Int, offset)
+        .query(query);
+        
     return result.recordset;
+};
+
+const countProviders = async ({ search, activeOnly = false }) => {
+    const pool = await poolPromise;
+    let filter = activeOnly ? "WHERE is_active = 1" : "WHERE 1=1";
+    const request = pool.request();
+
+    if (search) {
+        filter += ` AND (provider_name LIKE @search OR provider_code LIKE @search)`;
+        request.input("search", sql.NVarChar, `%${search}%`);
+    }
+
+    const result = await request.query(`SELECT COUNT(*) as total FROM BILLS_PROVIDERS ${filter}`);
+    return result.recordset[0].total;
 };
 
 const getProviderById = async (provider_id) => {
@@ -111,18 +140,50 @@ const deleteService = async (service_id) => {
     return true;
 };
 
-const getAllServices = async (activeOnly = false) => {
+const getAllServices = async ({ limit, offset, search, activeOnly = false }) => {
     const pool = await poolPromise;
-    let query = `
+    let filter = activeOnly ? "WHERE s.is_active = 1 AND p.is_active = 1" : "WHERE 1=1";
+    const request = pool.request();
+
+    if (search) {
+        filter += ` AND (s.service_name LIKE @search OR s.service_category LIKE @search OR p.provider_name LIKE @search)`;
+        request.input("search", sql.NVarChar, `%${search}%`);
+    }
+
+    const query = `
         SELECT s.*, p.provider_name 
         FROM BILLS_SERVICES s
         JOIN BILLS_PROVIDERS p ON s.provider_id = p.provider_id
+        ${filter}
+        ORDER BY s.service_id DESC
+        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
     `;
-    if (activeOnly) {
-        query += ` WHERE s.is_active = 1 AND p.is_active = 1`;
-    }
-    const result = await pool.request().query(query);
+
+    const result = await request
+        .input("limit", sql.Int, limit)
+        .input("offset", sql.Int, offset)
+        .query(query);
+        
     return result.recordset;
+};
+
+const countServices = async ({ search, activeOnly = false }) => {
+    const pool = await poolPromise;
+    let filter = activeOnly ? "WHERE s.is_active = 1 AND p.is_active = 1" : "WHERE 1=1";
+    const request = pool.request();
+
+    if (search) {
+        filter += ` AND (s.service_name LIKE @search OR s.service_category LIKE @search OR p.provider_name LIKE @search)`;
+        request.input("search", sql.NVarChar, `%${search}%`);
+    }
+
+    const result = await request.query(`
+        SELECT COUNT(*) as total 
+        FROM BILLS_SERVICES s
+        JOIN BILLS_PROVIDERS p ON s.provider_id = p.provider_id
+        ${filter}
+    `);
+    return result.recordset[0].total;
 };
 
 const getServicesByProvider = async (providerId, activeOnly = false) => {
@@ -163,11 +224,13 @@ module.exports = {
     updateProvider,
     deleteProvider,
     getProviders,
+    countProviders,
     getProviderById,
     createService,
     updateService,
     deleteService,
     getAllServices,
+    countServices,
     getServicesByProvider,
     findService,
 };
