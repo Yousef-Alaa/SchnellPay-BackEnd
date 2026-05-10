@@ -9,13 +9,15 @@ const createTransaction = async (
   amount,
   description,
   reference,
+  transactionType = "transfer",
 ) => {
   await new sql.Request(transaction)
     .input("sender_id", sql.Int, senderId)
     .input("receiver_id", sql.Int, receiverId)
     .input("amount", sql.Decimal(15, 2), amount)
     .input("desc", sql.VarChar, description)
-    .input("ref", sql.VarChar, reference).query(`
+    .input("ref", sql.VarChar, reference)
+    .input("type", sql.VarChar, transactionType).query(`
         INSERT INTO TRANSACTIONS (
             transaction_type,
             sender_id,
@@ -27,7 +29,7 @@ const createTransaction = async (
             created_at
         )
         VALUES (
-            'transfer',
+            @type,
             @sender_id,
             @receiver_id,
             @amount,
@@ -363,6 +365,15 @@ const updateTransactionStatus = async (id, status) => {
     .query("UPDATE TRANSACTIONS SET status = @status WHERE transaction_id = @id");
 };
 
+const checkExistingRefund = async (originalRef) => {
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input("original_ref", sql.VarChar, originalRef)
+    .query("SELECT COUNT(*) as count FROM TRANSACTIONS WHERE description LIKE '%' + @original_ref + '%' AND transaction_type = 'transfer'");
+  
+  return result.recordset[0].count > 0;
+};
+
 module.exports = {
   createBillTransaction,
   createTransaction,
@@ -374,4 +385,5 @@ module.exports = {
   getPinByUserId,
   getTransactionById,
   updateTransactionStatus,
+  checkExistingRefund,
 };

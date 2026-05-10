@@ -9,7 +9,8 @@ const { deductBalance, addBalance } = require("../../models/walletModel");
 const { 
   createTransaction, 
   getTransactionById, 
-  updateTransactionStatus 
+  updateTransactionStatus,
+  checkExistingRefund 
 } = require("../../models/transactionModel");
 const { createNotification } = require("../../utils/notificationHelper");
 
@@ -26,12 +27,12 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
     return next(AppError.create("Invalid amount", 400, false));
 
   const [sender, receiver] = await Promise.all([
-    findById(req.user.id),
+    findById(req.user.user_id),
     findByUsername(receiver_username),
   ]);
 
   if (!sender) return next(AppError.create("Sender not found", 400, false));
-  if (sender.username === receiver_username)
+  if (sender.user_name === receiver_username)
     return next(AppError.create("Cannot transfer to yourself", 400, false));
   if (!receiver) return next(AppError.create("Receiver not found", 400, false));
 
@@ -49,7 +50,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
     const added = await addBalance(transaction, receiver.user_id, amount);
     if (!added) throw AppError.create("Receiver wallet not found", 400, false);
 
-    const reference_number =
+    const refNumber =
       "TXN-" + crypto.randomBytes(4).toString("hex").toUpperCase();
     await createTransaction(
       transaction,
@@ -64,7 +65,7 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
     transactionStarted = false;
 
     // Create notifications for both sender and receiver
-    await createNotification(
+    createNotification(
       sender.user_id,
       "Money Sent",
       `You successfully sent ${amount} EGP to ${receiver_username}. Ref: ${refNumber}`,
@@ -72,10 +73,10 @@ exports.sendMoney = asyncWrapper(async (req, res, next) => {
       sender.email,
     );
 
-    await createNotification(
+    createNotification(
       receiver.user_id,
       "Money Received",
-      `You received ${amount} EGP from ${sender.username}. Ref: ${refNumber}`,
+      `You received ${amount} EGP from ${sender.user_name}. Ref: ${refNumber}`,
       "TRANSACTION",
       receiver.email,
     );
@@ -102,6 +103,21 @@ exports.updateStatus = asyncWrapper(async (req, res, next) => {
   }
   
   await updateTransactionStatus(id, status);
+
+  // Fetch transaction details to notify the correct user
+  const txn = await getTransactionById(id);
+  if (txn) {
+    const userId = txn.sender_id || txn.receiver_id;
+    if (userId) {
+      createNotification(
+        userId,
+        "Transaction Update",
+        `Your transaction (Ref: ${txn.reference_number || txn.transaction_id}) has been marked as ${status}.`,
+        "TRANSACTION",
+        null
+      );
+    }
+  }
     
   res.json({ success: true, message: "Status updated successfully" });
 });
@@ -118,6 +134,15 @@ exports.refundTransaction = asyncWrapper(async (req, res, next) => {
   if (!txn) return next(AppError.create("Transaction not found", 404));
   if (txn.status !== 'completed') return next(AppError.create("Only completed transactions can be refunded", 400));
   
+
+  // Safety check: verify if a refund already exists for this transaction
+  const originalRef = txn.reference_number || txn.transaction_id.toString();
+  const alreadyRefunded = await checkExistingRefund(originalRef);
+  
+  if (alreadyRefunded) {
+    return next(AppError.create("This transaction has already been refunded.", 400));
+  }
+
   const amount = txn.amount;
   const originalSender = txn.sender_id;
   const originalReceiver = txn.receiver_id;
@@ -141,18 +166,29 @@ exports.refundTransaction = asyncWrapper(async (req, res, next) => {
     const refNumber = "REF-" + crypto.randomBytes(4).toString("hex").toUpperCase();
     const desc = `Refund for TXN ${txn.reference_number || txn.transaction_id}`;
     
-    // Create refund transaction using existing createTransaction which safely uses 'transfer'
     await createTransaction(
       transaction,
-      originalReceiver, // Sender becomes the original receiver
-      originalSender,   // Receiver becomes the original sender
+      originalReceiver,
+      originalSender,
       amount,
       desc,
-      refNumber
+      refNumber,
+      "refund"
     );
       
     await transaction.commit();
     transactionStarted = false;
+
+    // Notify the original sender about the refund
+    if (originalSender) {
+      createNotification(
+        originalSender,
+        "Refund Received",
+        `A refund of ${amount} EGP has been credited back to your wallet for transaction ${txn.reference_number || txn.transaction_id}. Ref: ${refNumber}`,
+        "TRANSACTION"
+      );
+    }
+
     res.json({ success: true, message: "Transaction refunded successfully", data: { reference: refNumber } });
   } catch (err) {
     if (transactionStarted) await transaction.rollback();

@@ -12,12 +12,24 @@ const insertNotification = async (userId, title, body, type) => {
                     VALUES (@userId, @title, @body, @type)`);
 };
 
-const listNotifications = async (userId) => {
+const listNotifications = async (userId, limit = 10, offset = 0) => {
   const pool = await poolPromise;
-  return await pool.request().input("userId", sql.Int, userId)
+  return await pool.request()
+    .input("userId", sql.Int, userId)
+    .input("limit", sql.Int, limit)
+    .input("offset", sql.Int, offset)
     .query(`SELECT * FROM Notifications 
-                    WHERE userId = @userId 
-                    ORDER BY isRead ASC, createdAt DESC`);
+            WHERE userId = @userId 
+            ORDER BY isRead ASC, createdAt DESC
+            OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`);
+};
+
+const countNotifications = async (userId) => {
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input("userId", sql.Int, userId)
+    .query("SELECT COUNT(*) as total FROM Notifications WHERE userId = @userId");
+  return result.recordset[0].total;
 };
 
 const markRead = async (id, userId) => {
@@ -65,4 +77,5 @@ module.exports = {
   markAllRead: markAllRead,
   delete: deleteNotification,
   deleteAll: deleteAll,
+  count: countNotifications,
 };
