@@ -37,6 +37,7 @@ const register = asyncWrapper(async (req, res, next) => {
 
   const existingUser = await UserModel.findByEmail(email);
   const existingUsername = await UserModel.findByUsername(user_name);
+  const phoneNum = await UserModel.findByPhone(phone);
 
   if (existingUsername) {
     const error = AppError.create("Username already taken", 400, false);
@@ -52,6 +53,10 @@ const register = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
 
+  if (phoneNum) {
+    const error = AppError.create("Phone already taken", 400, false);
+    return next(error);
+  }
   if (!/^\d{6}$/.test(transaction_pin)) {
     const error = AppError.create(
       "Transaction PIN must be exactly 6 digits",
