@@ -33,6 +33,15 @@ Backend/
 └── vercel.json      # Vercel deployment configuration
 ```
 
+## API Documentation
+
+We provide two ways to explore our API documentation:
+
+1. **Apidog**: The complete and interactive API documentation can be found here:
+   👉 **[View Apidog Documentation](https://gzmjqslu89.apidog.io)**
+   
+2. **Swagger**: You can also find our Swagger-based API documentation on the dedicated `apiDoc` branch of this repository.
+
 ## Database Diagrams
 
 The `diagrams/` folder contains the **Entity Relationship Diagram (ERD)** and the **Mapping Schema** for the database.
