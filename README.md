@@ -67,5 +67,5 @@ Backend/
 ## Related Repositories
 
 Explore the other components of the Schnell-Pay platform:
-- [Frontend Repository](https://github.com/Mahmoud-Nasser1/SchnellPayy) - React-based web interface for users.
+- [Frontend Repository](https://github.com/Mahmoud-Nasser1/SchnellPay-FrontEnd) - React-based web interface for users.
 - [ATM Repository](https://github.com/Yousef-Alaa/SchnellPay-ATM) - Embedded ATmega32 project and simulation for the physical ATM interface.

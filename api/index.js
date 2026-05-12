@@ -22,7 +22,7 @@ const notificationRoute = require("../routes/notification/notificationRoute");
 const adminRoutes = require("../routes/admin/adminRoute");
 
 const corsOptions = {
-  origin: ['http://localhost:8081'],
+  origin: [process.env.FRONTEND_URL],
   credentials: true,
   optionsSuccessStatus: 200
 };

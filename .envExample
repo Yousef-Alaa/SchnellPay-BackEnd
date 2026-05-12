@@ -1,6 +1,7 @@
 PORT=
 NODE_ENV = development # set to 'production' when deploy
 SKIP_RATE_LIMIT=true
+FRONTEND_URL=http://localhost:8081
 
 DB_PORT=
 DB_NAME=
