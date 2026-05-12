@@ -1,7 +1,7 @@
 const path = require("path");
 
 const express = require("express");
-const cors = require('cors');
+const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const app = express();
 
@@ -22,13 +22,12 @@ const notificationRoute = require("../routes/notification/notificationRoute");
 const adminRoutes = require("../routes/admin/adminRoute");
 
 const corsOptions = {
-  origin: [process.env.FRONTEND_URL],
+  origin: ["http://localhost:8081"],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
-
 
 app.use(cookieParser());
 app.use(express.json());
