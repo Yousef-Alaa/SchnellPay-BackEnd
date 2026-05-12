@@ -21,6 +21,7 @@ Backend/
 ├── api/             # API routes or server entry points
 ├── config/          # Configuration files (e.g., database connection)
 ├── controllers/     # Route controllers containing business logic
+├── diagrams/        # ERD and Mapping Schema files
 ├── middleware/      # Express middleware functions
 ├── models/          # Database models/schemas
 ├── routes/          # Express route definitions
@@ -31,6 +32,22 @@ Backend/
 ├── package.json     # Project dependencies and scripts
 └── vercel.json      # Vercel deployment configuration
 ```
+
+## API Documentation
+
+We provide two ways to explore our API documentation:
+
+1. **Apidog**: The complete and interactive API documentation can be found here:
+   👉 **[View Apidog Documentation](https://gzmjqslu89.apidog.io)**
+   
+2. **Swagger**: You can also find our Swagger-based API documentation on the dedicated `apiDoc` branch of this repository.
+
+## Database Diagrams
+
+The `diagrams/` folder contains the **Entity Relationship Diagram (ERD)** and the **Mapping Schema** for the database.
+These files are in `.drawio` format. To view or edit them, please use [draw.io](https://app.diagrams.net/) (available on web or desktop).
+- `ERD.drawio`: Visual representation of the database entities and relationships.
+- `Relational Model.drawio`: The relational mapping schema.
 
 ## Installation Guide
 
