@@ -21,6 +21,7 @@ Backend/
 ├── api/             # API routes or server entry points
 ├── config/          # Configuration files (e.g., database connection)
 ├── controllers/     # Route controllers containing business logic
+├── diagrams/        # ERD and Mapping Schema files
 ├── middleware/      # Express middleware functions
 ├── models/          # Database models/schemas
 ├── routes/          # Express route definitions
@@ -31,6 +32,13 @@ Backend/
 ├── package.json     # Project dependencies and scripts
 └── vercel.json      # Vercel deployment configuration
 ```
+
+## Database Diagrams
+
+The `diagrams/` folder contains the **Entity Relationship Diagram (ERD)** and the **Mapping Schema** for the database.
+These files are in `.drawio` format. To view or edit them, please use [draw.io](https://app.diagrams.net/) (available on web or desktop).
+- `ERD.drawio`: Visual representation of the database entities and relationships.
+- `Relational Model.drawio`: The relational mapping schema.
 
 ## Installation Guide
 
