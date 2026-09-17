@@ -7,6 +7,8 @@ const config = {
   password: process.env.DB_PASSWORD,
   server: process.env.DB_SERVER,
   database: process.env.DB_NAME,
+  connectionTimeout: 30000, // 30 seconds connection timeout for cold starts / DB wake-up
+  requestTimeout: 30000,    // 30 seconds request timeout
   options: {
     encrypt: true,
     trustServerCertificate: true,
@@ -19,22 +21,33 @@ const config = {
   },
 };
 
-const poolPromise = new sql.ConnectionPool(config)
-  .connect()
-  .then((pool) => {
-    console.log("Connected to SQL Server");
-    return pool;
-  })
-  .catch(async (err) => {
-    console.log("DB Connection Failed:", err.message);
-    await sendWebhookAlert(
-      { error: err.message, code: err.code }, 
-      "DB Connection Failed ❌"
-    );
-    throw err;
-  });
+let poolPromise = null;
+
+function getPool() {
+  if (!poolPromise) {
+    poolPromise = new sql.ConnectionPool(config)
+      .connect()
+      .then((pool) => {
+        console.log("Connected to SQL Server");
+        return pool;
+      })
+      .catch(async (err) => {
+        console.log("DB Connection Failed:", err.message);
+        poolPromise = null; // Reset promise so subsequent requests can attempt to reconnect
+        await sendWebhookAlert(
+          { error: err.message, code: err.code },
+          "DB Connection Failed ❌"
+        );
+        throw err;
+      });
+  }
+  return poolPromise;
+}
 
 module.exports = {
   sql,
-  poolPromise,
+  get poolPromise() {
+    return getPool();
+  },
 };
+
