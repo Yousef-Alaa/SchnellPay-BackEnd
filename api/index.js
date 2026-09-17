@@ -5,6 +5,11 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const app = express();
 
+// Trust the first proxy hop (Vercel / nginx / any reverse proxy)
+// Required for express-rate-limit to correctly read the real client IP
+// from the X-Forwarded-For header.
+app.set("trust proxy", 1);
+
 const logger = require("../middleware/logger");
 const { globalLimiter } = require("../middleware/rateLimiter");
 
