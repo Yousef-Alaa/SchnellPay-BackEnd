@@ -11,7 +11,7 @@ CREATE TABLE [USERS] (
     phone               VARCHAR(20)     NOT NULL,
     password            VARCHAR(255)    NOT NULL,
     role                VARCHAR(20)     DEFAULT 'user',
-    transaction_PIN     VARCHAR(10),
+    transaction_PIN     VARCHAR(60),
     account_status      VARCHAR(20)     DEFAULT 'active',
     creation_date       DATETIME        DEFAULT GETDATE(),
     country             VARCHAR(50),
