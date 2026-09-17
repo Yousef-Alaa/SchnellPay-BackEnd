@@ -228,7 +228,7 @@ const saveResetOtp = async (email, otp, expires) => {
     .request()
     .input("email", sql.VarChar, email)
     .input("otp", sql.VarChar, otp)
-    .input("expires", sql.BigInt, expires).query(`
+    .input("expires", sql.DateTime, new Date(expires)).query(`
       UPDATE USERS
       SET reset_otp = @otp,
           reset_otp_expires = @expires,

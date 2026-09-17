@@ -8,7 +8,7 @@ const insertNotification = async (userId, title, body, type) => {
     .input("title", sql.NVarChar(255), title)
     .input("body", sql.NVarChar(sql.MAX), body)
     .input("type", sql.NVarChar(50), type)
-    .query(`INSERT INTO Notifications (userId, title, body, type) 
+    .query(`INSERT INTO NOTIFICATIONS (user_id, title, body, type) 
                     VALUES (@userId, @title, @body, @type)`);
 };
 
@@ -18,9 +18,9 @@ const listNotifications = async (userId, limit = 10, offset = 0) => {
     .input("userId", sql.Int, userId)
     .input("limit", sql.Int, limit)
     .input("offset", sql.Int, offset)
-    .query(`SELECT * FROM Notifications 
-            WHERE userId = @userId 
-            ORDER BY isRead ASC, createdAt DESC
+    .query(`SELECT * FROM NOTIFICATIONS 
+            WHERE user_id = @userId 
+            ORDER BY is_read ASC, created_at DESC
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`);
 };
 
@@ -28,7 +28,7 @@ const countNotifications = async (userId) => {
   const pool = await poolPromise;
   const result = await pool.request()
     .input("userId", sql.Int, userId)
-    .query("SELECT COUNT(*) as total FROM Notifications WHERE userId = @userId");
+    .query("SELECT COUNT(*) as total FROM NOTIFICATIONS WHERE user_id = @userId");
   return result.recordset[0].total;
 };
 
@@ -39,7 +39,7 @@ const markRead = async (id, userId) => {
     .input("id", sql.Int, id)
     .input("userId", sql.Int, userId)
     .query(
-      "UPDATE Notifications SET isRead = 1 WHERE id = @id AND userId = @userId",
+      "UPDATE NOTIFICATIONS SET is_read = 1 WHERE notification_id = @id AND user_id = @userId",
     );
 };
 
@@ -48,7 +48,7 @@ const markAllRead = async (userId) => {
   return await pool
     .request()
     .input("userId", sql.Int, userId)
-    .query("UPDATE Notifications SET isRead = 1 WHERE userId = @userId");
+    .query("UPDATE NOTIFICATIONS SET is_read = 1 WHERE user_id = @userId");
 };
 
 const deleteNotification = async (id, userId) => {
@@ -57,7 +57,7 @@ const deleteNotification = async (id, userId) => {
     .request()
     .input("notifId", sql.Int, id)
     .input("uId", sql.Int, userId)
-    .query("DELETE FROM Notifications WHERE id = @notifId AND userId = @uId");
+    .query("DELETE FROM NOTIFICATIONS WHERE notification_id = @notifId AND user_id = @uId");
 
   return result.rowsAffected[0];
 };
@@ -67,7 +67,7 @@ const deleteAll = async (userId) => {
   return await pool
     .request()
     .input("userId", sql.Int, userId)
-    .query("DELETE FROM Notifications WHERE userId = @userId");
+    .query("DELETE FROM NOTIFICATIONS WHERE user_id = @userId");
 };
 
 module.exports = {
