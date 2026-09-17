@@ -1,4 +1,5 @@
 const sql = require("mssql");
+const sendWebhookAlert = require("../utils/sendWebhookAlert");
 require("dotenv").config();
 
 const config = {
@@ -24,8 +25,12 @@ const poolPromise = new sql.ConnectionPool(config)
     console.log("Connected to SQL Server");
     return pool;
   })
-  .catch((err) => {
+  .catch(async (err) => {
     console.log("DB Connection Failed:", err.message);
+    await sendWebhookAlert(
+      { error: err.message, code: err.code }, 
+      "DB Connection Failed ❌"
+    );
     throw err;
   });
 

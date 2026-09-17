@@ -20,6 +20,7 @@ const depositMethodRouter = require("../routes/paymentMethods/depositMethodRoute
 const activityLogRoutes = require("../routes/activityLog/activityLogRoutes");
 const notificationRoute = require("../routes/notification/notificationRoute");
 const adminRoutes = require("../routes/admin/adminRoute");
+const healthCheck = require("../controllers/healthCheck");
 
 const corsOptions = {
   origin: ["http://localhost:8081"],
@@ -51,6 +52,8 @@ app.use("/api/v1/transactions", transactionsRoutes);
 
 app.use("/api/v1/payment-methods", paymentMethodsRouter);
 app.use("/api/v1/wallet/deposit", depositMethodRouter);
+
+app.get('/api/health', healthCheck);
 
 //global middleware for wrong routing
 app.use((req, res) => {
