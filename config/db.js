@@ -7,8 +7,8 @@ const config = {
   password: process.env.DB_PASSWORD,
   server: process.env.DB_SERVER,
   database: process.env.DB_NAME,
-  connectionTimeout: 30000, // 30 seconds connection timeout for cold starts / DB wake-up
-  requestTimeout: 30000,    // 30 seconds request timeout
+  connectionTimeout: 10000,
+  requestTimeout: 15000,
   options: {
     encrypt: true,
     trustServerCertificate: true,
@@ -17,29 +17,45 @@ const config = {
   pool: {
     max: 10,
     min: 0,
-    idleTimeoutMillis: 30000,
+    idleTimeoutMillis: 15000,
   },
 };
 
 let poolPromise = null;
 
-function getPool() {
-  if (!poolPromise) {
-    poolPromise = new sql.ConnectionPool(config)
-      .connect()
-      .then((pool) => {
-        console.log("Connected to SQL Server");
-        return pool;
-      })
-      .catch(async (err) => {
-        console.log("DB Connection Failed:", err.message);
-        poolPromise = null; // Reset promise so subsequent requests can attempt to reconnect
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function createPool(retries = 5, delayMs = 3000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const pool = await new sql.ConnectionPool(config).connect();
+      console.log("Connected to SQL Server");
+      return pool;
+    } catch (err) {
+      console.log(`DB Connection attempt ${attempt}/${retries} failed: ${err.message}`);
+
+      if (attempt === retries) {
+        // All retries exhausted — alert and throw
+        poolPromise = null;
         await sendWebhookAlert(
           { error: err.message, code: err.code },
           "DB Connection Failed ❌"
         );
         throw err;
-      });
+      }
+
+      console.log(`Retrying in ${delayMs / 1000}s...`);
+      await sleep(delayMs);
+    }
+  }
+}
+
+function getPool() {
+  if (!poolPromise) {
+    poolPromise = createPool().catch((err) => {
+      poolPromise = null; // Reset so future requests can retry
+      throw err;
+    });
   }
   return poolPromise;
 }
@@ -50,4 +66,3 @@ module.exports = {
     return getPool();
   },
 };
-
